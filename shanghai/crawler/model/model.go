@@ -6,6 +6,7 @@ import (
 	"os"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -214,6 +215,92 @@ func (cs *Dailys) Add(c Daily) {
 func (cs *Dailys) Sort() {
 	sort.SliceStable(*cs, func(i, j int) bool {
 		return (*cs)[i].Date.After((*cs)[j].Date)
+	})
+}
+
+type Resident struct {
+	Date      time.Time // 日期
+	Type      string    // 分型 （确诊病例/无症状感染者）
+	Gender    string    // 性别
+	Age       float64   // 年龄
+	District  string    // 区
+	Address   string    // 居住地
+	Longitude float64   // 经度
+	Latitude  float64   // 纬度
+}
+
+type Residents []Resident
+
+// var lockResidents sync.Mutex
+
+func (rs Residents) SaveToCSV(filename string) error {
+	records := [][]string{}
+	//	Header
+	header := []string{
+		"日期",
+		"分型",
+		"性别",
+		"年龄",
+		"市",
+		"区",
+		"居住地",
+		"经度",
+		"纬度",
+	}
+
+	records = append(records, header)
+
+	for _, r := range rs {
+		rec := []string{
+			r.Date.Format("2006-01-02"),
+			r.Type,
+			r.Gender,
+			strconv.FormatFloat(r.Age, 'g', 0, 32),
+			"上海市",
+			r.District,
+			r.Address,
+			strconv.FormatFloat(r.Longitude, 'f', -1, 64),
+			strconv.FormatFloat(r.Latitude, 'f', -1, 64),
+		}
+		records = append(records, rec)
+	}
+
+	return SaveToCSV(filename, records)
+}
+
+// func (rs Residents) Find(d time.Time) *Resident {
+// 	for i, c := range rs {
+// 		if c.Date.Truncate(24 * time.Hour).Equal(d.Truncate(24 * time.Hour)) {
+// 			return &rs[i]
+// 		}
+// 	}
+// 	return nil
+// }
+
+// func (rs *Residents) Add(r Resident) {
+// 	lockResidents.Lock()
+// 	*rs = append(*rs, r)
+// 	lockResidents.Unlock()
+// }
+
+func (rs *Residents) Sort() {
+	sort.SliceStable(*rs, func(i, j int) bool {
+		l := (*rs)[i]
+		r := (*rs)[j]
+
+		if !l.Date.Equal(r.Date) {
+			return l.Date.After(r.Date)
+		}
+
+		if l.District != r.District {
+			return strings.Compare(l.District, r.District) < 0
+		}
+
+		if l.Address != r.Address {
+			return strings.Compare(l.Address, r.Address) < 0
+		}
+
+		return l.Age < r.Age
 	})
 }
 

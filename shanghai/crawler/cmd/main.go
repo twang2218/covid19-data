@@ -14,7 +14,7 @@ import (
 
 const (
 	DEFAULT_FILE_DAILY     = "../data/shanghai-daily.csv"
-	DEFAULT_FILE_LOCATIONS = "../data/shanghai-locations.csv"
+	DEFAULT_FILE_RESIDENTS = "../data/shanghai-daily-residents.csv"
 	DEFAULT_FILE_LOG       = "../data/crawler.log"
 )
 
@@ -48,9 +48,15 @@ func main() {
 						Value: false,
 					},
 					&cli.StringFlag{
-						Name:    "output",
-						Aliases: []string{"o"},
+						Name:    "daily",
+						Aliases: []string{"d"},
 						Value:   DEFAULT_FILE_DAILY,
+						// Required:    true,
+					},
+					&cli.StringFlag{
+						Name:    "residents",
+						Aliases: []string{"r"},
+						Value:   DEFAULT_FILE_RESIDENTS,
 						// Required:    true,
 					},
 				},
