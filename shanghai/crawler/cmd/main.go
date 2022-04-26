@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"runtime/pprof"
 
+	_ "github.com/joho/godotenv/autoload"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 )
@@ -36,6 +37,14 @@ func main() {
 				Name:    "verbose",
 				Aliases: []string{"v"},
 				Value:   false,
+			},
+			&cli.StringFlag{
+				Name:    "key_amap",
+				EnvVars: []string{"KEY_AMAP"},
+			},
+			&cli.StringFlag{
+				Name:    "key_tianditu",
+				EnvVars: []string{"KEY_TIANDITU"},
 			},
 		},
 		Commands: []*cli.Command{
