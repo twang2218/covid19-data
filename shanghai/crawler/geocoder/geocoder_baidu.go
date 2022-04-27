@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/suifengtec/gocoord"
 )
 
@@ -44,8 +45,16 @@ type GeocoderAPIBaidu struct {
 	key string
 }
 
-func NewGeocoderBaidu(key string) Geocoder {
-	return Geocoder{api: GeocoderAPIBaidu{key: key}}
+func NewGeocoderBaidu(key, cachedir string) Geocoder {
+	var cache *GeocodeCache
+	if len(cachedir) > 0 {
+		var err error
+		cache, err = NewGeocodeCache(cachedir)
+		if err != nil {
+			log.Errorf("NewGeocoderBaidu(): 无法建立缓存[%s]：%s", cachedir, err)
+		}
+	}
+	return Geocoder{api: GeocoderAPIBaidu{key: key}, cache: cache}
 }
 
 func (a GeocoderAPIBaidu) GetURL(addr string) *url.URL {

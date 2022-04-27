@@ -41,17 +41,13 @@ const (
 
 var DATE_RESIDENT_MERGED time.Time = time.Date(2022, 3, 18, 0, 0, 0, 0, time.Local)
 
-func NewDailyCrawler(cache bool) *DailyCrawler {
+func NewDailyCrawler(cache_dir string) *DailyCrawler {
 	hc := DailyCrawler{}
 	//	创建基础爬虫
 	// u, err := url.Parse(LINK_DAILY)
 	// if err != nil {
 	// 	log.Fatal(err)
 	// }
-	var cache_dir string
-	if cache {
-		cache_dir = CRAWLER_CACHE_DIR
-	}
 
 	hc.cItem = colly.NewCollector(
 		colly.AllowedDomains(

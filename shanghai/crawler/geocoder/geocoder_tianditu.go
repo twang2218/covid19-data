@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // http://lbs.tianditu.gov.cn/server/geocodinginterface.html
@@ -44,8 +46,16 @@ type GeocoderAPITianditu struct {
 	key string
 }
 
-func NewGeocoderTianditu(key string) Geocoder {
-	return Geocoder{api: GeocoderAPITianditu{key: key}}
+func NewGeocoderTianditu(key, cachedir string) Geocoder {
+	var cache *GeocodeCache
+	if len(cachedir) > 0 {
+		var err error
+		cache, err = NewGeocodeCache(cachedir)
+		if err != nil {
+			log.Errorf("NewGeocoderTianditu(): 无法建立缓存[%s]：%s", cachedir, err)
+		}
+	}
+	return Geocoder{api: GeocoderAPITianditu{key: key}, cache: cache}
 }
 
 func (a GeocoderAPITianditu) GetURL(addr string) *url.URL {
@@ -74,7 +84,11 @@ func (a GeocoderAPITianditu) Parse(body []byte) (*Address, error) {
 	resp := GeocoderAPITiandituResponse{}
 	json.Unmarshal(body, &resp)
 	if resp.Status != "0" {
-		return nil, fmt.Errorf("GeocoderAPITianditu.Parse(): [%s] %s", resp.Status, resp.MSG)
+		if len(resp.MSG) > 0 {
+			return nil, fmt.Errorf("GeocoderAPITianditu.Parse(): [%s] %s", resp.Status, resp.MSG)
+		} else {
+			return nil, fmt.Errorf("GeocoderAPITianditu.Parse(): %s", body)
+		}
 	}
 	//	返回
 	return &Address{

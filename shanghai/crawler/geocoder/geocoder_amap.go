@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/suifengtec/gocoord"
 )
 
@@ -65,8 +66,16 @@ type GeocoderAPIAmap struct {
 	key string
 }
 
-func NewGeocoderAMAP(key string) Geocoder {
-	return Geocoder{api: GeocoderAPIAmap{key: key}}
+func NewGeocoderAMAP(key, cachedir string) Geocoder {
+	var cache *GeocodeCache
+	if len(cachedir) > 0 {
+		var err error
+		cache, err = NewGeocodeCache(cachedir)
+		if err != nil {
+			log.Errorf("NewGeocoderBaidu(): 无法建立缓存[%s]：%s", cachedir, err)
+		}
+	}
+	return Geocoder{api: GeocoderAPIAmap{key: key}, cache: cache}
 }
 
 func (a GeocoderAPIAmap) GetURL(addr string) *url.URL {

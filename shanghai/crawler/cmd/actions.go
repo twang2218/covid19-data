@@ -2,49 +2,90 @@ package main
 
 import (
 	"crawler/crawler"
+	"crawler/geocoder"
 	"crawler/model"
 	"fmt"
-	"sync"
 	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 )
 
+var gc_count int
+
+func consume(gc geocoder.Geocoder, rs *model.Residents, stats *map[time.Time]int, in chan model.Resident) {
+	for r := range in {
+		//	地理编码
+		s := fmt.Sprintf("%s%s%s", r.City, r.District, r.Address)
+		addr, err := gc.Geocode(s)
+		if err != nil {
+			log.Warnf("解析地址 %q 失败：%s", s, err)
+		} else {
+			r.Longitude = addr.Longitude
+			r.Latitude = addr.Latitude
+			gc_count += 1
+		}
+		//	追加
+		*rs = append(*rs, r)
+		//	统计
+		if val, ok := (*stats)[r.Date]; ok {
+			(*stats)[r.Date] = val + 1
+		} else {
+			(*stats)[r.Date] = 1
+		}
+	}
+}
+
 func actionCrawlDaily(c *cli.Context) error {
 	var ds model.Dailys
 	var rs model.Residents
-	rss := make(map[time.Time]int, 0)
-	var lockR sync.Mutex
 
-	crawler := crawler.NewDailyCrawler(!c.Bool("no-cache"))
+	stats := make(map[time.Time]int, 0)
+	ch := make(chan model.Resident)
+
+	// gc := geocoder.NewGeocoderTianditu(c.String("key_tianditu"), c.String("geo_cache"))
+	// log.Debugf("geo_cache: %q, web_cache: %q", c.String("geo_cache"), c.String("web_cache"))
+
+	gc := geocoder.NewGeocoderBaidu(c.String("key_baidu_map"), c.String("geo_cache"))
+
+	go consume(gc, &rs, &stats, ch)
+
+	var web_cache string
+	if !c.Bool("no-cache") {
+		web_cache = c.String("web_cache")
+	}
+	crawler := crawler.NewDailyCrawler(web_cache)
 	crawler.AddOnDailyListener(func(cs model.Daily) {
 		d := ds.Find(cs.Date)
 		if d == nil {
 			ds.Add(cs)
 			if len(ds)%100 == 0 {
 				if err := ds.SaveToCSV(c.String("daily")); err != nil {
-					log.Fatal(fmt.Errorf("无法写入文件 %q: %s", c.String("daily"), err))
+					log.Fatal(fmt.Errorf("无法写入文件(daily) %q: %s", c.String("daily"), err))
 				}
 			}
 		} else {
 			log.Warnf("发现重复日期：%s", cs.Date.Format("2006-01-02"))
 		}
 	})
-	crawler.AddOnResidentsListener(func(r model.Residents) {
+	crawler.AddOnResidentsListener(func(rs2 model.Residents) {
 		// log.Infof("%d + %d", len(rs), len(r))
-		lockR.Lock()
-		rs = append(rs, r...)
-		for _, t := range r {
-			if val, ok := rss[t.Date]; ok {
-				rss[t.Date] = val + 1
-			} else {
-				rss[t.Date] = 1
+		for _, r := range rs2 {
+			// 送给数据处理通道
+			ch <- r
+			// 中间保存
+			if len(rs)%100 == 0 {
+				if err := rs.SaveToCSV(c.String("residents")); err != nil {
+					log.Fatal(fmt.Errorf("无法写入文件(residents) %q: %s", c.String("residents"), err))
+				}
 			}
 		}
-		lockR.Unlock()
 	})
 	crawler.Collect()
+
+	//	爬虫结束
+	close(ch)
+
 	// bar.Finish()
 	log.Infof("总共得到 %d 天疫情数据。", len(ds))
 
@@ -72,7 +113,7 @@ func actionCrawlDaily(c *cli.Context) error {
 			d.Death,
 			d.LocalDeath,
 			d.ImportedDeath,
-			rss[d.Date],
+			stats[d.Date],
 		)
 		// log.Tracef("actionCrawlDaily(): [%s] \t => 无症状：%d, \t 区域无症状： {%v}",
 		// 	d.Date.Format("2006-01-02"),
@@ -88,12 +129,12 @@ func actionCrawlDaily(c *cli.Context) error {
 
 	//	将最终结果写入 JSON
 	if err := ds.SaveToCSV(c.String("daily")); err != nil {
-		return fmt.Errorf("无法写入文件 %q: %s", c.String("daily"), err)
+		return fmt.Errorf("无法写入文件(daily) %q: %s", c.String("daily"), err)
 	}
 
-	// rs.Sort()
+	rs.Sort()
 	if err := rs.SaveToCSV(c.String("residents")); err != nil {
-		return fmt.Errorf("无法写入文件 %q: %s", c.String("residents"), err)
+		return fmt.Errorf("无法写入文件(resident) %q: %s", c.String("residents"), err)
 	}
 
 	return nil

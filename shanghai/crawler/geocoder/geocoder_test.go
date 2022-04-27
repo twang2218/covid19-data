@@ -3,6 +3,7 @@ package geocoder
 import (
 	"math"
 	"os"
+	"path"
 	"testing"
 
 	"github.com/joho/godotenv"
@@ -25,7 +26,7 @@ func TestGeocoder(t *testing.T) {
 
 	var g Geocoder
 
-	g = NewGeocoderAMAP(os.Getenv("KEY_AMAP"))
+	g = NewGeocoderAMAP(os.Getenv("KEY_AMAP"), path.Join(os.TempDir(), "geocoder", "amap"))
 	for i, c := range testcases {
 		gi, err := g.Geocode(c.Address)
 		assert.NoErrorf(t, err, "高德地图API： 返回错误：(%d) %q => %s", i, c, err)
@@ -35,7 +36,7 @@ func TestGeocoder(t *testing.T) {
 		}
 	}
 
-	g = NewGeocoderTianditu(os.Getenv("KEY_TIANDITU"))
+	g = NewGeocoderTianditu(os.Getenv("KEY_TIANDITU"), path.Join(os.TempDir(), "geocoder", "tianditu"))
 	for i, c := range testcases {
 		gi, err := g.Geocode(c.Address)
 		assert.NoErrorf(t, err, "天地图API： 返回错误：(%d) %q => %s", i, c, err)
@@ -45,7 +46,7 @@ func TestGeocoder(t *testing.T) {
 		}
 	}
 
-	g = NewGeocoderBaidu(os.Getenv("KEY_BAIDU_MAP"))
+	g = NewGeocoderBaidu(os.Getenv("KEY_BAIDU_MAP"), path.Join(os.TempDir(), "geocoder", "baidu"))
 	for i, c := range testcases {
 		gi, err := g.Geocode(c.Address)
 		assert.NoErrorf(t, err, "百度地图API： 返回错误：(%d) %q => %s", i, c, err)

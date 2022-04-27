@@ -38,14 +38,6 @@ func main() {
 				Aliases: []string{"v"},
 				Value:   false,
 			},
-			&cli.StringFlag{
-				Name:    "key_amap",
-				EnvVars: []string{"KEY_AMAP"},
-			},
-			&cli.StringFlag{
-				Name:    "key_tianditu",
-				EnvVars: []string{"KEY_TIANDITU"},
-			},
 		},
 		Commands: []*cli.Command{
 			{
@@ -67,6 +59,26 @@ func main() {
 						Aliases: []string{"r"},
 						Value:   DEFAULT_FILE_RESIDENTS,
 						// Required:    true,
+					},
+					&cli.StringFlag{
+						Name:    "key_amap",
+						EnvVars: []string{"KEY_AMAP"},
+					},
+					&cli.StringFlag{
+						Name:    "key_tianditu",
+						EnvVars: []string{"KEY_TIANDITU"},
+					},
+					&cli.StringFlag{
+						Name:    "key_baidu_map",
+						EnvVars: []string{"KEY_BAIDU_MAP"},
+					},
+					&cli.StringFlag{
+						Name:  "web_cache",
+						Value: "../data/.web_cache",
+					},
+					&cli.StringFlag{
+						Name:  "geo_cache",
+						Value: "../data/.geo_cache",
 					},
 				},
 				Action: actionCrawlDaily,
