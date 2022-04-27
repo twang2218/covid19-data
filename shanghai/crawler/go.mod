@@ -7,6 +7,7 @@ require (
 	github.com/joho/godotenv v1.4.0
 	github.com/sirupsen/logrus v1.6.0
 	github.com/stretchr/testify v1.7.0
+	github.com/suifengtec/gocoord v0.0.0-20210116135606-a0cd8c71c959
 	github.com/urfave/cli/v2 v2.2.0
 )
 

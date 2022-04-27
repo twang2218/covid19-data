@@ -28,7 +28,14 @@ func (g Geocoder) Geocode(addr string) (*Address, error) {
 	if err != nil {
 		return nil, err
 	}
-	return g.api.Parse(body)
+	a, err := g.api.Parse(body)
+	if err != nil {
+		return a, err
+	}
+	if len(a.Address) == 0 {
+		a.Address = addr
+	}
+	return a, nil
 }
 
 type GeocoderAPI interface {

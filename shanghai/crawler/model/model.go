@@ -223,6 +223,7 @@ type Resident struct {
 	Type      string    // 分型 （确诊病例/无症状感染者）
 	Gender    string    // 性别
 	Age       float64   // 年龄
+	City      string    // 城市
 	District  string    // 区
 	Address   string    // 居住地
 	Longitude float64   // 经度
@@ -256,7 +257,7 @@ func (rs Residents) SaveToCSV(filename string) error {
 			r.Type,
 			r.Gender,
 			strconv.FormatFloat(r.Age, 'g', 0, 32),
-			"上海市",
+			r.City,
 			r.District,
 			r.Address,
 			strconv.FormatFloat(r.Longitude, 'f', -1, 64),

@@ -852,6 +852,7 @@ func parseResidents(rs *model.Residents, date time.Time, content string) error {
 					Type:     t,
 					Gender:   strings.TrimSpace(m[3]),
 					Age:      age,
+					City:     "上海市",
 					District: strings.TrimSpace(m[5]),
 					Address:  strings.TrimSpace(m[6]),
 				}
@@ -882,6 +883,7 @@ func parseResidents(rs *model.Residents, date time.Time, content string) error {
 				if len(addr) > 0 {
 					r := model.Resident{
 						Date:     date,
+						City:     "上海市",
 						District: d,
 						Address:  addr,
 					}

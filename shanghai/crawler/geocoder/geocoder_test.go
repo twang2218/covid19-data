@@ -44,4 +44,14 @@ func TestGeocoder(t *testing.T) {
 			assert.Less(t, math.Abs(gi.Latitude-c.Latitude), THRESHOLD)
 		}
 	}
+
+	g = NewGeocoderBaidu(os.Getenv("KEY_BAIDU_MAP"))
+	for i, c := range testcases {
+		gi, err := g.Geocode(c.Address)
+		assert.NoErrorf(t, err, "百度地图API： 返回错误：(%d) %q => %s", i, c, err)
+		if err == nil {
+			assert.Less(t, math.Abs(gi.Longitude-c.Longitude), THRESHOLD)
+			assert.Less(t, math.Abs(gi.Latitude-c.Latitude), THRESHOLD)
+		}
+	}
 }

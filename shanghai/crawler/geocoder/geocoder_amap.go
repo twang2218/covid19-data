@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+
+	"github.com/suifengtec/gocoord"
 )
 
 // 高德地图
@@ -103,6 +105,14 @@ func (a GeocoderAPIAmap) Parse(body []byte) (*Address, error) {
 	if gi.Latitude, err = strconv.ParseFloat(loc[1], 64); err != nil {
 		return &gi, fmt.Errorf("无法解析经纬度：%v: %s", rr, err)
 	}
+	//	坐标转换：GCJ02 => WGS84
+	l2 := gocoord.GCJ02ToWGS84(gocoord.Position{Lon: gi.Longitude, Lat: gi.Latitude})
+	// fmt.Printf("GCJ02 (%.6f, %.6f) => WGS84 (%.6f, %6f)\n",
+	// 	gi.Latitude, gi.Longitude,
+	// 	l2.Lat, l2.Lon,
+	// )
+	gi.Latitude = l2.Lat
+	gi.Longitude = l2.Lon
 	//	返回
 	return &gi, nil
 }
