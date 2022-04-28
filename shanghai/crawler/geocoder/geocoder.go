@@ -106,6 +106,12 @@ func (g Geocoder) GeocodeInBatch(addrs []string) ([]Address, error) {
 	return results, nil
 }
 
+func (g Geocoder) Close() {
+	if g.cache != nil {
+		g.cache.db.Close()
+	}
+}
+
 type GeocoderAPI interface {
 	Name() string
 	Request(addr string) (*Address, error)

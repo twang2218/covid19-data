@@ -57,6 +57,7 @@ func actionCrawlDaily(c *cli.Context) error {
 	// log.Debugf("geo_cache: %q, web_cache: %q", c.String("geo_cache"), c.String("web_cache"))
 
 	gc := geocoder.NewGeocoderBaidu(c.String("key_baidu_map"), c.String("geo_cache"))
+	defer gc.Close()
 
 	go consume(&gc, &rs, &stats, ch)
 
