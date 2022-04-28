@@ -13,17 +13,26 @@ import (
 
 var gc_count int
 
-func consume(gc geocoder.Geocoder, rs *model.Residents, stats *map[time.Time]int, in chan model.Resident) {
+func consume(gc *geocoder.Geocoder, rs *model.Residents, stats *map[time.Time]int, in chan model.Resident) {
 	for r := range in {
 		//	地理编码
-		s := fmt.Sprintf("%s%s%s", r.City, r.District, r.Address)
-		addr, err := gc.Geocode(s)
-		if err != nil {
-			log.Warnf("解析地址 %q 失败：%s", s, err)
-		} else {
-			r.Longitude = addr.Longitude
-			r.Latitude = addr.Latitude
-			gc_count += 1
+		if gc != nil {
+			s := fmt.Sprintf("%s%s%s", r.City, r.District, r.Address)
+			addr, err := gc.Geocode(s)
+			if err != nil {
+				log.Warnf("解析地址 %q 失败：%s", s, err)
+			} else {
+				r.Longitude = addr.Longitude
+				r.Latitude = addr.Latitude
+				gc_count += 1
+			}
+		}
+		if gc_count%100000 == 0 {
+			fmt.Println()
+		} else if gc_count%10000 == 0 {
+			fmt.Print(":")
+		} else if gc_count%1000 == 0 {
+			fmt.Print(".")
 		}
 		//	追加
 		*rs = append(*rs, r)
@@ -34,6 +43,7 @@ func consume(gc geocoder.Geocoder, rs *model.Residents, stats *map[time.Time]int
 			(*stats)[r.Date] = 1
 		}
 	}
+	fmt.Println()
 }
 
 func actionCrawlDaily(c *cli.Context) error {
@@ -48,7 +58,7 @@ func actionCrawlDaily(c *cli.Context) error {
 
 	gc := geocoder.NewGeocoderBaidu(c.String("key_baidu_map"), c.String("geo_cache"))
 
-	go consume(gc, &rs, &stats, ch)
+	go consume(&gc, &rs, &stats, ch)
 
 	var web_cache string
 	if !c.Bool("no-cache") {

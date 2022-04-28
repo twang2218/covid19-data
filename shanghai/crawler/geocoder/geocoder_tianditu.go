@@ -3,6 +3,8 @@ package geocoder
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"net/url"
 	"strings"
 
@@ -58,42 +60,63 @@ func NewGeocoderTianditu(key, cachedir string) Geocoder {
 	return Geocoder{api: GeocoderAPITianditu{key: key}, cache: cache}
 }
 
-func (a GeocoderAPITianditu) GetURL(addr string) *url.URL {
+func (a GeocoderAPITianditu) Name() string {
+	return "天地图API"
+}
+
+func (a GeocoderAPITianditu) Request(addr string) (*Address, error) {
+	var err error
+
 	u, err := url.Parse("https://api.tianditu.gov.cn/geocoder")
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	params := u.Query()
 	params.Add("tk", a.key)
 	params.Add("ds", strings.ReplaceAll("{\"keyWord\":\"{addr}\"}", "{addr}", addr))
 	u.RawQuery = params.Encode()
 
-	return u
-}
+	resp, err := http.Get(u.String())
+	if err != nil {
+		return nil, err
+	}
+	//	Load Response Body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
 
-func (a GeocoderAPITianditu) Parse(body []byte) (*Address, error) {
-	gi := Address{}
-	//	Parse JSON
+	//	解析 JSON
 	r := GeocoderAPITiandituResponse{}
 
-	var err error
 	if err = json.Unmarshal(body, &r); err != nil {
-		return &gi, err
+		return nil, fmt.Errorf("JSON解析失败：'%s' => %s", body, err)
 	}
-	//	Transform
-	resp := GeocoderAPITiandituResponse{}
-	json.Unmarshal(body, &resp)
-	if resp.Status != "0" {
-		if len(resp.MSG) > 0 {
-			return nil, fmt.Errorf("GeocoderAPITianditu.Parse(): [%s] %s", resp.Status, resp.MSG)
+	//	处理API返回结果
+	if r.Status != "0" {
+		if len(r.MSG) > 0 {
+			return nil, fmt.Errorf("GeocoderAPITianditu.Parse(): [%s] %s", r.Status, r.MSG)
 		} else {
 			return nil, fmt.Errorf("GeocoderAPITianditu.Parse(): %s", body)
 		}
 	}
+	//	天地图的坐标系接近 WGS84，所以不进行转换
+
 	//	返回
-	return &Address{
-		Address:   resp.Location.Keyword,
-		Longitude: resp.Location.Lon,
-		Latitude:  resp.Location.Lat,
-	}, nil
+	return &Address{Address: r.Location.Keyword, Longitude: r.Location.Lon, Latitude: r.Location.Lat}, nil
+}
+
+// 天地图没有批处理API，因此对单次请求进行封装
+func (a GeocoderAPITianditu) RequestBatch(addrs []string) ([]Address, error) {
+	result := make([]Address, 0, len(addrs))
+	for _, addr := range addrs {
+		if a, err := a.Request(addr); err == nil {
+			//	添加解析结果
+			result = append(result, *a)
+		} else {
+			//	无法解析，添加坐标为0的地址
+			result = append(result, Address{Address: addr})
+		}
+	}
+	return result, nil
 }

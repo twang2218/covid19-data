@@ -256,7 +256,7 @@ func (rs Residents) SaveToCSV(filename string) error {
 			r.Date.Format("2006-01-02"),
 			r.Type,
 			r.Gender,
-			strconv.FormatFloat(r.Age, 'g', 0, 32),
+			strconv.FormatFloat(r.Age, 'f', 0, 32),
 			r.City,
 			r.District,
 			r.Address,

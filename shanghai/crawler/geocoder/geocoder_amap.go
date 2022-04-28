@@ -1,8 +1,11 @@
 package geocoder
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
@@ -42,6 +45,9 @@ import (
 // 	  }
 // 	]
 //   }
+type GeocoderAPIAmap struct {
+	key string
+}
 
 type GeocoderAPIAmapResponseItem struct {
 	Formatted_Address string
@@ -62,8 +68,17 @@ type GeocoderAPIAmapResponse struct {
 	Geocodes []GeocoderAPIAmapResponseItem
 }
 
-type GeocoderAPIAmap struct {
-	key string
+type GeocoderAPIAmapBatchRequestItem struct {
+	Url string `json:"url"`
+}
+
+type GeocoderAPIAmapBatchRequest struct {
+	Ops []GeocoderAPIAmapBatchRequestItem `json:"ops"`
+}
+
+type GeocoderAPIAmapBatchResponse []struct {
+	Status int
+	Body   GeocoderAPIAmapResponse
 }
 
 func NewGeocoderAMAP(key, cachedir string) Geocoder {
@@ -72,56 +87,143 @@ func NewGeocoderAMAP(key, cachedir string) Geocoder {
 		var err error
 		cache, err = NewGeocodeCache(cachedir)
 		if err != nil {
-			log.Errorf("NewGeocoderBaidu(): 无法建立缓存[%s]：%s", cachedir, err)
+			log.Errorf("NewGeocoderAMAP(): 无法建立缓存[%s]：%s", cachedir, err)
 		}
 	}
 	return Geocoder{api: GeocoderAPIAmap{key: key}, cache: cache}
 }
 
-func (a GeocoderAPIAmap) GetURL(addr string) *url.URL {
+func (a GeocoderAPIAmap) Name() string {
+	return "高德地图API"
+}
+
+func (a GeocoderAPIAmap) Request(addr string) (*Address, error) {
+	var err error
+
 	u, err := url.Parse("https://restapi.amap.com/v3/geocode/geo")
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	params := u.Query()
 	params.Add("key", a.key)
 	params.Add("address", addr)
 	u.RawQuery = params.Encode()
 
-	return u
-}
+	resp, err := http.Get(u.String())
+	if err != nil {
+		return nil, err
+	}
+	//	Load Response Body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
 
-func (a GeocoderAPIAmap) Parse(body []byte) (*Address, error) {
-	gi := Address{}
 	//	Parse JSON
 	r := GeocoderAPIAmapResponse{}
-
-	var err error
 	if err = json.Unmarshal(body, &r); err != nil {
-		return &gi, err
+		return nil, err
 	}
+
 	if r.Status != "1" {
 		return nil, fmt.Errorf("GeocoderAPIAmap.Parse(): [%s] %s", r.Status, r.Info)
 	}
 	//	Transform
-	rr := r.Geocodes[0]
-	gi.Address = rr.Formatted_Address
+	r0 := r.Geocodes[0]
 	///	解析经纬度
-	loc := strings.Split(rr.Location, ",")
-	if gi.Longitude, err = strconv.ParseFloat(loc[0], 64); err != nil {
-		return &gi, fmt.Errorf("无法解析经纬度：%v: %s", rr, err)
+	loc := strings.Split(r0.Location, ",")
+	var longitude, latitude float64
+	if longitude, err = strconv.ParseFloat(loc[0], 64); err != nil {
+		return nil, fmt.Errorf("无法解析经纬度：%v: %s", r0, err)
 	}
-	if gi.Latitude, err = strconv.ParseFloat(loc[1], 64); err != nil {
-		return &gi, fmt.Errorf("无法解析经纬度：%v: %s", rr, err)
+	if latitude, err = strconv.ParseFloat(loc[1], 64); err != nil {
+		return nil, fmt.Errorf("无法解析经纬度：%v: %s", r0, err)
 	}
 	//	坐标转换：GCJ02 => WGS84
-	l2 := gocoord.GCJ02ToWGS84(gocoord.Position{Lon: gi.Longitude, Lat: gi.Latitude})
+	l2 := gocoord.GCJ02ToWGS84(gocoord.Position{Lon: longitude, Lat: latitude})
 	// fmt.Printf("GCJ02 (%.6f, %.6f) => WGS84 (%.6f, %6f)\n",
-	// 	gi.Latitude, gi.Longitude,
+	// 	longitude, latitude,
 	// 	l2.Lat, l2.Lon,
 	// )
-	gi.Latitude = l2.Lat
-	gi.Longitude = l2.Lon
+
 	//	返回
-	return &gi, nil
+	return &Address{Address: r0.Formatted_Address, Longitude: l2.Lon, Latitude: l2.Lat}, nil
+}
+
+// https://lbs.amap.com/api/webservice/guide/api/batchrequest
+
+func (g GeocoderAPIAmap) RequestBatch(addrs []string) ([]Address, error) {
+	var err error
+
+	u, err := url.Parse("https://restapi.amap.com/v3/batch?key=" + g.key)
+	if err != nil {
+		return nil, err
+	}
+
+	ops := []GeocoderAPIAmapBatchRequestItem{}
+	for _, addr := range addrs {
+		u, err := url.Parse("https://restapi.amap.com/v3/geocode/geo")
+		if err != nil {
+			return nil, err
+		}
+		params := u.Query()
+		params.Add("key", g.key)
+		params.Add("address", addr)
+		u.RawQuery = params.Encode()
+
+		ops = append(ops, GeocoderAPIAmapBatchRequestItem{u.RequestURI()})
+	}
+	req := GeocoderAPIAmapBatchRequest{ops}
+	post_body, err := json.Marshal(req)
+	if err != nil {
+		return nil, err
+	}
+	// fmt.Printf("> [%d] %s\n", len(addrs), post_body)
+
+	resp, err := http.Post(u.String(), "application/json", bytes.NewBuffer(post_body))
+	if err != nil {
+		return nil, err
+	}
+
+	//	Load Response Body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	resps := GeocoderAPIAmapBatchResponse{}
+
+	if err = json.Unmarshal(body, &resps); err != nil {
+		return nil, fmt.Errorf("JSON解析失败：'%s' => %s", body, err)
+	}
+
+	result := make([]Address, 0, len(addrs))
+	if len(resps) == len(addrs) {
+		for i, r := range resps {
+			if len(r.Body.Geocodes) > 0 {
+				r0 := r.Body.Geocodes[0]
+				///	解析经纬度
+				loc := strings.Split(r0.Location, ",")
+				var longitude, latitude float64
+				if longitude, err = strconv.ParseFloat(loc[0], 64); err != nil {
+					log.Errorf("无法解析经纬度：%v: %s", r0, err)
+				}
+				if latitude, err = strconv.ParseFloat(loc[1], 64); err != nil {
+					log.Errorf("无法解析经纬度：%v: %s", r0, err)
+				}
+				//	坐标转换：GCJ02 => WGS84
+				l2 := gocoord.GCJ02ToWGS84(gocoord.Position{Lon: longitude, Lat: latitude})
+				result = append(result, Address{
+					Address:   r0.Formatted_Address,
+					Longitude: l2.Lon,
+					Latitude:  l2.Lat,
+				})
+			} else {
+				//	添加坐标为0的地址
+				result = append(result, Address{Address: addrs[i]})
+			}
+		}
+	}
+
+	return result, nil
 }

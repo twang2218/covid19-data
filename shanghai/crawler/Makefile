@@ -15,5 +15,5 @@ test:
 clean:
 	go clean
 	rm -f ./shanghai-crawler
-	rm -rf ../data/.cache
+	rm -rf ../data/{.cache,.web_cache}
 
