@@ -21,8 +21,10 @@ type Daily struct {
 	Severe                           int // 重型
 	Critical                         int // 危重型
 	Death                            int // 死亡
+	InHospital                       int // 在院治疗
 	DischargedFromHospital           int // 治愈出院
 	DischargedFromMedicalObservation int // 解除医学观察
+	UnderMedicalObservation          int // 尚在医学观察
 
 	//	本土
 	LocalConfirmed                        int // 本土确诊病例
@@ -32,16 +34,27 @@ type Daily struct {
 	LocalConfirmedFromRisk                int // 从风险人群中发现的本土病例
 	LocalAsymptomaticFromBubble           int // 从闭环隔离中发现的无症状感染者
 	LocalAsymptomaticFromRisk             int // 从风险人群中发现的无症状感染者
+	LocalInHospital                       int // 本土在院治疗
 	LocalDischargedFromHospital           int // 本土病例出院
 	LocalDischargedFromMedicalObservation int // 本土解除医学观察
 	LocalDeath                            int // 本土死亡病例
+	LocalUnderMedicalObservation          int // 本土尚在医学观察
 
 	//	境外输入
 	ImportedConfirmed                        int // 境外输入病例
 	ImportedAsymptomatic                     int // 境外输入无症状感染者
+	ImportedInHospital                       int // 境外输入在院治疗
 	ImportedDischargedFromHospital           int // 境外输入病例出院
 	ImportedDischargedFromMedicalObservation int // 境外输入解除医学观察
 	ImportedDeath                            int // 境外输入死亡
+	ImportedUnderMedicalObservation          int // 境外输入尚在医学观察
+
+	//	累计
+	TotalLocalConfirmed                 int // 累计本土确诊
+	TotalLocalDischargedFromHospital    int // 累计本土治愈出院
+	TotalLocalDeath                     int // 累计本土死亡
+	TotalImportedConfirmed              int // 累计境外输入确诊病例
+	TotalImportedDischargedFromHospital int // 累计境外输入治愈出院
 
 	//	分区
 	DistrictConfirmed                 map[string]int // 城区确诊病例
@@ -91,8 +104,10 @@ func (cs Dailys) SaveToCSV(filename string) error {
 		"重型",
 		"危重型",
 		"死亡",
+		"在院治疗",
 		"治愈出院",
 		"解除医学观察",
+		"尚在医学观察",
 		//	本土
 		"本土确诊病例",
 		"本土无症状感染者",
@@ -101,15 +116,25 @@ func (cs Dailys) SaveToCSV(filename string) error {
 		"从风险人群中发现的本土病例",
 		"从闭环隔离中发现的无症状感染者",
 		"从风险人群中发现的无症状感染者",
+		"本土在院治疗",
 		"本土病例出院",
 		"本土解除医学观察",
 		"本土死亡病例",
+		"本土尚在医学观察",
 		//	境外输入
 		"境外输入病例",
 		"境外输入无症状感染者",
+		"境外输入在院治疗",
 		"境外输入病例出院",
 		"境外输入解除医学观察",
 		"境外输入死亡",
+		"境外输入尚在医学观察",
+		//	累计
+		"累计本土确诊",
+		"累计治愈出院",
+		"累计本土死亡",
+		"累计境外输入确诊病例",
+		"累计境外输入治愈出院",
 	}
 	//	分区
 	for _, d := range districts {
@@ -160,8 +185,10 @@ func (cs Dailys) SaveToCSV(filename string) error {
 			strconv.Itoa(c.Severe),
 			strconv.Itoa(c.Critical),
 			strconv.Itoa(c.Death),
+			strconv.Itoa(c.InHospital),
 			strconv.Itoa(c.DischargedFromHospital),
 			strconv.Itoa(c.DischargedFromMedicalObservation),
+			strconv.Itoa(c.UnderMedicalObservation),
 			//	本土
 			strconv.Itoa(c.LocalConfirmed),
 			strconv.Itoa(c.LocalAsymptomatic),
@@ -170,15 +197,25 @@ func (cs Dailys) SaveToCSV(filename string) error {
 			strconv.Itoa(c.LocalConfirmedFromRisk),
 			strconv.Itoa(c.LocalAsymptomaticFromBubble),
 			strconv.Itoa(c.LocalAsymptomaticFromRisk),
+			strconv.Itoa(c.LocalInHospital),
 			strconv.Itoa(c.LocalDischargedFromHospital),
 			strconv.Itoa(c.LocalDischargedFromMedicalObservation),
 			strconv.Itoa(c.LocalDeath),
+			strconv.Itoa(c.LocalUnderMedicalObservation),
 			//	境外输入
 			strconv.Itoa(c.ImportedConfirmed),
 			strconv.Itoa(c.ImportedAsymptomatic),
+			strconv.Itoa(c.ImportedInHospital),
 			strconv.Itoa(c.ImportedDischargedFromHospital),
 			strconv.Itoa(c.ImportedDischargedFromMedicalObservation),
 			strconv.Itoa(c.ImportedDeath),
+			strconv.Itoa(c.ImportedUnderMedicalObservation),
+			//	累计
+			strconv.Itoa(c.TotalLocalConfirmed),
+			strconv.Itoa(c.TotalLocalDischargedFromHospital),
+			strconv.Itoa(c.TotalLocalDeath),
+			strconv.Itoa(c.TotalImportedConfirmed),
+			strconv.Itoa(c.TotalImportedDischargedFromHospital),
 		}
 		//	分区
 		r = appendByDistricts(r, districts, c.DistrictConfirmed)

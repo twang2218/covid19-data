@@ -337,6 +337,18 @@ var (
 	reDailyLocalAsymptomaticFromBubble              = regexp.MustCompile(`—24时.*和(?P<number>\d+)例无症状感染者在隔离管控中发现`)
 	reDailyLocalDeath                               = regexp.MustCompile(`—24时.*本土.*死亡(?:病例)?(?P<number>\d+)例`)
 	reDailyImportedDeath                            = regexp.MustCompile(`—24时.*境外输入.*死亡(?:病例)?(?P<number>\d+)例`)
+	reDailyTotalLocalConfirmed                      = regexp.MustCompile(`24时[^。]+累计本土确诊(?:病例)?(?P<number>\d+)例`)
+	reDailyTotalLocalDischargedFromHospital         = regexp.MustCompile(`24时[^。]+累计[^。]*本土[^。]*治愈出院(?P<number>\d+)例`)
+	reDailyTotalLocalDeath                          = regexp.MustCompile(`24时[^。]+累计[^。]*(?:本土)?[^。]*死亡(?P<number>\d+)例`)
+	reDailyLocalInHospital                          = regexp.MustCompile(`24时[^。]+累计[^。]*本土[^。]*在院治疗(?P<number>\d+)例`)
+	reDailySevere                                   = regexp.MustCompile(`24时[^。]+累计[^。]*本土[^。危]*重[型症](?P<number>\d+)例`)
+	reDailyCritical                                 = regexp.MustCompile(`24时[^。]+累计[^。]*本土[^。]*危重型(?P<number>\d+)例`)
+	reDailyTotalImportedConfirmed                   = regexp.MustCompile(`24时[^。]+累计[^。]*境外输入[^。]*确诊病例(?P<number>\d+)例`)
+	reDailyTotalImportedDischargedFromHospital      = regexp.MustCompile(`24时[^。]+累计[^。]*境外输入[^。]*出院(?P<number>\d+)例`)
+	reDailyImportedInHospital                       = regexp.MustCompile(`24时[^。]+累计[^。]*境外输入[^。]*在院治疗(?P<number>\d+)例`)
+	reDailyUnderMedicalObservation                  = regexp.MustCompile(`24时[^。]+尚在医学观察中的[无症状]+感染者(?P<number>\d+)例`)
+	reDailyLocalUnderMedicalObservation             = regexp.MustCompile(`24时[^。]+尚在医学观察中[^。]+本土无症状感染者(?P<number>\d+)[例，]`)
+	reDailyImportedUnderMedicalObservation          = regexp.MustCompile(`24时[^。]+尚在医学观察中[^。]*境外输入性?无症状[感染者]+(?P<number>\d+)[例，。]`)
 )
 
 // 解析 Daily 内容
@@ -476,6 +488,138 @@ func parseDailyContent(d *model.Daily, content string) error {
 		d.ImportedDeath, err = strconv.Atoi(m[1])
 		if err != nil {
 			return fmt.Errorf("[%s] 无法解析文章内容中境外输入死亡病例：%q", d.Date.Format("2006-01-02"), m[1])
+		}
+	}
+
+	// 累计本土确诊
+	m = reDailyTotalLocalConfirmed.FindStringSubmatch(content)
+	if m == nil {
+		// log.Warnf("[%s] 无法解析文章内容中累计本土确诊：%q", d.Date.Format("2006-01-02"), content)
+	} else {
+		d.TotalLocalConfirmed, err = strconv.Atoi(m[1])
+		if err != nil {
+			return fmt.Errorf("[%s] 无法解析文章内容中累计本土确诊：%q", d.Date.Format("2006-01-02"), m[1])
+		}
+	}
+
+	// 累计本土治愈出院
+	m = reDailyTotalLocalDischargedFromHospital.FindStringSubmatch(content)
+	if m == nil {
+		// log.Warnf("[%s] 无法解析文章内容中累计本土治愈出院：%q", d.Date.Format("2006-01-02"), content)
+	} else {
+		d.TotalLocalDischargedFromHospital, err = strconv.Atoi(m[1])
+		if err != nil {
+			return fmt.Errorf("[%s] 无法解析文章内容中累计本土治愈出院：%q", d.Date.Format("2006-01-02"), m[1])
+		}
+	}
+
+	// 本土在院治疗
+	m = reDailyLocalInHospital.FindStringSubmatch(content)
+	if m == nil {
+		// log.Warnf("[%s] 无法解析文章内容中本土在院治疗：%q", d.Date.Format("2006-01-02"), content)
+	} else {
+		d.LocalInHospital, err = strconv.Atoi(m[1])
+		if err != nil {
+			return fmt.Errorf("[%s] 无法解析文章内容中本土在院治疗：%q", d.Date.Format("2006-01-02"), m[1])
+		}
+	}
+
+	// 累计境外输入确诊
+	m = reDailyTotalImportedConfirmed.FindStringSubmatch(content)
+	if m == nil {
+		// log.Warnf("[%s] 无法解析文章内容中累计境外输入确诊：%q", d.Date.Format("2006-01-02"), content)
+	} else {
+		d.TotalImportedConfirmed, err = strconv.Atoi(m[1])
+		if err != nil {
+			return fmt.Errorf("[%s] 无法解析文章内容中累计境外输入确诊：%q", d.Date.Format("2006-01-02"), m[1])
+		}
+	}
+
+	// 累计境外输入治愈出院
+	m = reDailyTotalImportedDischargedFromHospital.FindStringSubmatch(content)
+	if m == nil {
+		// log.Warnf("[%s] 无法解析文章内容中累计境外输入治愈出院：%q", d.Date.Format("2006-01-02"), content)
+	} else {
+		d.TotalImportedDischargedFromHospital, err = strconv.Atoi(m[1])
+		if err != nil {
+			return fmt.Errorf("[%s] 无法解析文章内容中累计境外输入治愈出院：%q", d.Date.Format("2006-01-02"), m[1])
+		}
+	}
+
+	// 境外输入在院治疗
+	m = reDailyImportedInHospital.FindStringSubmatch(content)
+	if m == nil {
+		// log.Warnf("[%s] 无法解析文章内容中境外输入在院治疗：%q", d.Date.Format("2006-01-02"), content)
+	} else {
+		d.ImportedInHospital, err = strconv.Atoi(m[1])
+		if err != nil {
+			return fmt.Errorf("[%s] 无法解析文章内容中境外输入在院治疗：%q", d.Date.Format("2006-01-02"), m[1])
+		}
+	}
+
+	// 累计本土死亡
+	m = reDailyTotalLocalDeath.FindStringSubmatch(content)
+	if m == nil {
+		// log.Warnf("[%s] 无法解析文章内容中累计本土死亡：%q", d.Date.Format("2006-01-02"), content)
+	} else {
+		d.TotalLocalDeath, err = strconv.Atoi(m[1])
+		if err != nil {
+			return fmt.Errorf("[%s] 无法解析文章内容中累计本土死亡：%q", d.Date.Format("2006-01-02"), m[1])
+		}
+	}
+
+	// 重型
+	m = reDailySevere.FindStringSubmatch(content)
+	if m == nil {
+		// log.Warnf("[%s] 无法解析文章内容中重型：%q", d.Date.Format("2006-01-02"), content)
+	} else {
+		d.Severe, err = strconv.Atoi(m[1])
+		if err != nil {
+			return fmt.Errorf("[%s] 无法解析文章内容中重型：%q", d.Date.Format("2006-01-02"), m[1])
+		}
+	}
+
+	// 危重型
+	m = reDailyCritical.FindStringSubmatch(content)
+	if m == nil {
+		// log.Warnf("[%s] 无法解析文章内容中危重型：%q", d.Date.Format("2006-01-02"), content)
+	} else {
+		d.Critical, err = strconv.Atoi(m[1])
+		if err != nil {
+			return fmt.Errorf("[%s] 无法解析文章内容中危重型：%q", d.Date.Format("2006-01-02"), m[1])
+		}
+	}
+
+	// 尚在医学观察
+	m = reDailyUnderMedicalObservation.FindStringSubmatch(content)
+	if m == nil {
+		// log.Warnf("[%s] 无法解析文章内容中尚在医学观察：%q", d.Date.Format("2006-01-02"), content)
+	} else {
+		d.UnderMedicalObservation, err = strconv.Atoi(m[1])
+		if err != nil {
+			return fmt.Errorf("[%s] 无法解析文章内容中尚在医学观察：%q", d.Date.Format("2006-01-02"), m[1])
+		}
+	}
+
+	// 本土尚在医学观察
+	m = reDailyLocalUnderMedicalObservation.FindStringSubmatch(content)
+	if m == nil {
+		// log.Warnf("[%s] 无法解析文章内容中本土尚在医学观察：%q", d.Date.Format("2006-01-02"), content)
+	} else {
+		d.LocalUnderMedicalObservation, err = strconv.Atoi(m[1])
+		if err != nil {
+			return fmt.Errorf("[%s] 无法解析文章内容中本土尚在医学观察：%q", d.Date.Format("2006-01-02"), m[1])
+		}
+	}
+
+	// 境外输入尚在医学观察
+	m = reDailyImportedUnderMedicalObservation.FindStringSubmatch(content)
+	if m == nil {
+		// log.Warnf("[%s] 无法解析文章内容中境外输入尚在医学观察：%q", d.Date.Format("2006-01-02"), content)
+	} else {
+		d.ImportedUnderMedicalObservation, err = strconv.Atoi(m[1])
+		if err != nil {
+			return fmt.Errorf("[%s] 无法解析文章内容中境外输入尚在医学观察：%q", d.Date.Format("2006-01-02"), m[1])
 		}
 	}
 
@@ -785,6 +929,41 @@ func fixDaily(d *model.Daily) error {
 		if d.Death != (d.LocalDeath + d.ImportedDeath) {
 			log.Warnf("[%s] 死亡数据不匹配：总共:%d (本土:%d / 境外输入:%d)", d.Date.Format("2006-01-02"), d.Death, d.LocalDeath, d.ImportedDeath)
 		}
+	}
+
+	// 在院治疗
+	if d.InHospital == 0 {
+		if d.LocalInHospital != 0 || d.ImportedInHospital != 0 {
+			d.InHospital = d.LocalInHospital + d.ImportedInHospital
+		}
+	} else {
+		if d.InHospital != (d.LocalInHospital + d.ImportedInHospital) {
+			log.Warnf("[%s] 在院治疗数据不匹配：总共:%d (本土:%d / 境外输入:%d)", d.Date.Format("2006-01-02"), d.InHospital, d.LocalInHospital, d.ImportedInHospital)
+		}
+	}
+
+	// 尚在医疗观察
+	if d.UnderMedicalObservation == 0 {
+		if d.LocalUnderMedicalObservation != 0 || d.ImportedUnderMedicalObservation != 0 {
+			d.UnderMedicalObservation = d.LocalUnderMedicalObservation + d.ImportedUnderMedicalObservation
+		}
+	} else {
+		if d.UnderMedicalObservation != (d.LocalUnderMedicalObservation + d.ImportedUnderMedicalObservation) {
+			log.Warnf("[%s] 尚在医疗观察数据不匹配：总共:%d (本土:%d / 境外输入:%d)", d.Date.Format("2006-01-02"),
+				d.UnderMedicalObservation, d.LocalUnderMedicalObservation, d.ImportedUnderMedicalObservation)
+		}
+	}
+
+	//	本土确诊、出院、死亡、住院
+	if d.LocalInHospital+d.TotalLocalDischargedFromHospital+d.TotalLocalDeath != d.TotalLocalConfirmed {
+		log.Warnf("[%s] 本土确诊、出院、死亡、住院数据不匹配：累计本土确诊(%d) => 本土在院治疗(%d) + 累计本土治愈出院(%d) + 累计本土死亡(%d)", d.Date.Format("2006-01-02"),
+			d.TotalLocalConfirmed, d.LocalInHospital, d.TotalLocalDischargedFromHospital, d.TotalLocalDeath)
+	}
+
+	//	境外输入确诊、出院、死亡、住院
+	if d.ImportedInHospital+d.TotalImportedDischargedFromHospital != d.TotalImportedConfirmed {
+		log.Warnf("[%s] 境外输入确诊、出院、死亡、住院数据不匹配：累计境外输入确诊(%d) => 境外输入在院治疗(%d) + 累计境外输入治愈出院(%d)", d.Date.Format("2006-01-02"),
+			d.TotalImportedConfirmed, d.ImportedInHospital, d.TotalImportedDischargedFromHospital)
 	}
 
 	return nil

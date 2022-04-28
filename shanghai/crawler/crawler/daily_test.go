@@ -97,6 +97,189 @@ func TestRegexpDailyTitle(t *testing.T) {
 	}
 }
 
+func TestRegexpContentTotal(t *testing.T) {
+	testcases := [][]string{
+		{
+			"2022年2月26日0时至2022年4月27日24时，累计本土确诊45840例，治愈出院23931例，在院治疗21624例（其中重型304例，危重型48例）。现有待排查的疑似病例0例。\n2022年2月26日0时至2022年4月27日24时，累计死亡285例。\n截至2022年4月27日24时，累计境外输入性确诊病例4579例，出院4573例，在院治疗6例。现有待排查的疑似病例0例。\n截至2022年3月27日24时，尚在医学观察中的无症状感染者14414例，其中本土无症状感染者14376，境外输入性无症状感染38例。",
+			"45840", //	累计本土确诊
+			"23931", // 累计本土治愈出院
+			"21624", // 本土在院治疗
+			"285",   // 累计本土死亡
+			"304",   // 重型
+			"48",    // 危重型
+			"4579",  // 累计境外输入确诊
+			"4573",  // 累计境外输入治愈出院
+			"6",     // 境外输入在院治疗
+			"14414", // 尚在医学观察
+			"14376", // 本土尚在医学观察
+			"38",    // 境外输入尚在医学观察
+		},
+		{
+			"2022年2月26日0时至2022年4月26日24时，累计本土确诊44548例，治愈出院21621例，在院治疗22689例（其中重型244例，危重型27例），死亡238例。现有待排查的疑似病例0例。\n截至2022年4月26日24时，累计境外输入性确诊病例4579例，出院4573例，在院治疗6例。现有待排查的疑似病例0例。",
+			"44548", //	累计本土确诊
+			"21621", // 累计本土治愈出院
+			"22689", // 本土在院治疗
+			"238",   // 累计本土死亡
+			"244",   // 重型
+			"27",    // 危重型
+			"4579",  // 累计境外输入确诊
+			"4573",  // 累计境外输入治愈出院
+			"6",     // 境外输入在院治疗
+			"",      // 尚在医学观察
+			"",      // 本土尚在医学观察
+			"",      // 境外输入尚在医学观察
+		},
+		{
+			"截至2022年2月19日24时，累计境外输入性确诊病例3584例，出院3400例，在院治疗184例。现有待排查的疑似病例0例。\n截至2022年2月19日24时，累计本土确诊病例392例，治愈出院384例，在院治疗1例，死亡7例。现有待排查的疑似病例0例。\n截至2022年2月19日24时，尚在医学观察中的无症感染者5例，其中境外输入性无症状感染者4例，本土无症状感染者1例。",
+			"392",  // 累计本土确诊
+			"384",  // 累计本土治愈出院
+			"1",    // 本土在院治疗
+			"7",    // 累计本土死亡
+			"",     // 重型
+			"",     // 危重型
+			"3584", // 累计境外输入确诊
+			"3400", // 累计境外输入治愈出院
+			"184",  // 境外输入在院治疗
+			"5",    // 尚在医学观察
+			"1",    // 本土尚在医学观察
+			"4",    // 境外输入尚在医学观察
+		},
+		{
+			"截至2022年1月11日24时，累计境外输入性确诊病例2984例，出院2636例，在院治疗348例。现有待排查的疑似病例1例。\n截至2022年1月11日24时，累计本土确诊病例388例，治愈出院381例，在院治疗0例，死亡7例。现有待排查的疑似病例0例。\n截至2022年1月11日24时，尚在医学观察中的无症状感染者23例，其中境外输入无症状感染者7例，本土无症状感染者16例。",
+			"388",  // 累计本土确诊
+			"381",  // 累计本土治愈出院
+			"0",    // 本土在院治疗
+			"7",    // 累计本土死亡
+			"",     // 重型
+			"",     // 危重型
+			"2984", // 累计境外输入确诊
+			"2636", // 累计境外输入治愈出院
+			"348",  // 境外输入在院治疗
+			"23",   // 尚在医学观察
+			"16",   // 本土尚在医学观察
+			"7",    // 境外输入尚在医学观察
+		},
+		{
+			"截至2022年4月12日24时，累计本土确诊9903例，治愈出院2120例，在院治疗7776例（其中重症9例）。现有待排查的疑似病例0例。\n截至2022年4月12日24时，累计境外输入性确诊病例4568例，出院4526例，在院治疗42例。现有待排查的疑似病例28例。\n截至2022年4月12日24时，尚在医学观察中的无症状感染者224704例，其中本土无症状感染者224691例，境外输入性无症状感染13例。",
+			"9903",   // 累计本土确诊
+			"2120",   // 累计本土治愈出院
+			"7776",   // 本土在院治疗
+			"",       // 累计本土死亡
+			"9",      // 重型
+			"",       // 危重型
+			"4568",   // 累计境外输入确诊
+			"4526",   // 累计境外输入治愈出院
+			"42",     // 境外输入在院治疗
+			"224704", // 尚在医学观察
+			"224691", // 本土尚在医学观察
+			"13",     // 境外输入尚在医学观察
+		},
+	}
+
+	for i, c := range testcases {
+		var m []string
+		// 累计本土确诊
+		m = reDailyTotalLocalConfirmed.FindStringSubmatch(c[0])
+		assert.NotNil(t, m, fmt.Sprintf("匹配内容 - 累计本土确诊失败：(%d) %q => nil", i, c[0]))
+		if len(m) > 0 {
+			assert.Equal(t, c[1], m[1], fmt.Sprintf("匹配内容 - 累计本土确诊失败：(%d) %q => nil", i, c[0]))
+		}
+		// 累计本土治愈出院
+		m = reDailyTotalLocalDischargedFromHospital.FindStringSubmatch(c[0])
+		assert.NotNil(t, m, fmt.Sprintf("匹配内容 - 累计本土治愈出院失败：(%d) %q => nil", i, c[0]))
+		if len(m) > 0 {
+			assert.Equal(t, c[2], m[1], fmt.Sprintf("匹配内容 - 累计本土治愈出院失败：(%d) %q => nil", i, c[0]))
+		}
+		// 本土在院治疗
+		m = reDailyLocalInHospital.FindStringSubmatch(c[0])
+		assert.NotNil(t, m, fmt.Sprintf("匹配内容 - 本土在院治疗失败：(%d) %q => nil", i, c[0]))
+		if len(m) > 0 {
+			assert.Equal(t, c[3], m[1], fmt.Sprintf("匹配内容 - 本土在院治疗失败：(%d) %q => nil", i, c[0]))
+		}
+		// 累计本土死亡
+		m = reDailyTotalLocalDeath.FindStringSubmatch(c[0])
+		if len(c[4]) > 0 {
+			assert.NotNil(t, m, fmt.Sprintf("匹配内容 - 累计本土死亡失败：(%d) %q => nil", i, c[0]))
+			if len(m) > 0 {
+				assert.Equal(t, c[4], m[1], fmt.Sprintf("匹配内容 - 累计本土死亡失败：(%d) %q => nil", i, c[0]))
+			}
+		} else {
+			assert.Nil(t, m, fmt.Sprintf("匹配内容 - 累计本土死亡失败：(%d) %q => nil", i, c[0]))
+		}
+		// 重型
+		m = reDailySevere.FindStringSubmatch(c[0])
+		if len(c[5]) > 0 {
+			assert.NotNil(t, m, fmt.Sprintf("匹配内容 - 重型失败：(%d) %q => nil", i, c[0]))
+			if len(m) > 0 {
+				assert.Equal(t, c[5], m[1], fmt.Sprintf("匹配内容 - 重型失败：(%d) %q => nil", i, c[0]))
+			}
+		} else {
+			assert.Nil(t, m, fmt.Sprintf("匹配内容 - 重型失败：(%d) %q => nil", i, c[0]))
+		}
+		// 危重型
+		m = reDailyCritical.FindStringSubmatch(c[0])
+		if len(c[6]) > 0 {
+			assert.NotNil(t, m, fmt.Sprintf("匹配内容 - 危重型失败：(%d) %q => nil", i, c[0]))
+			if len(m) > 0 {
+				assert.Equal(t, c[6], m[1], fmt.Sprintf("匹配内容 - 危重型失败：(%d) %q => nil", i, c[0]))
+			}
+		} else {
+			assert.Nil(t, m, fmt.Sprintf("匹配内容 - 危重型失败：(%d) %q => nil", i, c[0]))
+		}
+		// 累计境外输入确诊
+		m = reDailyTotalImportedConfirmed.FindStringSubmatch(c[0])
+		assert.NotNil(t, m, fmt.Sprintf("匹配内容 - 累计境外输入确诊失败：(%d) %q => nil", i, c[0]))
+		if len(m) > 0 {
+			assert.Equal(t, c[7], m[1], fmt.Sprintf("匹配内容 - 累计境外输入确诊失败：(%d) %q => nil", i, c[0]))
+		}
+		// 累计境外输入治愈出院
+		m = reDailyTotalImportedDischargedFromHospital.FindStringSubmatch(c[0])
+		assert.NotNil(t, m, fmt.Sprintf("匹配内容 - 累计境外输入治愈出院失败：(%d) %q => nil", i, c[0]))
+		if len(m) > 0 {
+			assert.Equal(t, c[8], m[1], fmt.Sprintf("匹配内容 - 累计境外输入治愈出院失败：(%d) %q => nil", i, c[0]))
+		}
+		// 境外输入在院治疗
+		m = reDailyImportedInHospital.FindStringSubmatch(c[0])
+		assert.NotNil(t, m, fmt.Sprintf("匹配内容 - 境外输入在院治疗失败：(%d) %q => nil", i, c[0]))
+		if len(m) > 0 {
+			assert.Equal(t, c[9], m[1], fmt.Sprintf("匹配内容 - 境外输入在院治疗失败：(%d) %q => nil", i, c[0]))
+		}
+		// 尚在医学观察
+		m = reDailyUnderMedicalObservation.FindStringSubmatch(c[0])
+		if len(c[10]) > 0 {
+			assert.NotNil(t, m, fmt.Sprintf("匹配内容 - 尚在医学观察失败：(%d) %q => nil", i, c[0]))
+			if len(m) > 0 {
+				assert.Equal(t, c[10], m[1], fmt.Sprintf("匹配内容 - 尚在医学观察失败：(%d) %q => nil", i, c[0]))
+			}
+		} else {
+			assert.Nil(t, m, fmt.Sprintf("匹配内容 - 尚在医学观察失败：(%d) %q => nil", i, c[0]))
+		}
+		// 本土尚在医学观察
+		m = reDailyLocalUnderMedicalObservation.FindStringSubmatch(c[0])
+		if len(c[11]) > 0 {
+			assert.NotNil(t, m, fmt.Sprintf("匹配内容 - 本土尚在医学观察失败：(%d) %q => nil", i, c[0]))
+			if len(m) > 0 {
+				assert.Equal(t, c[11], m[1], fmt.Sprintf("匹配内容 - 本土尚在医学观察失败：(%d) %q => nil", i, c[0]))
+			}
+		} else {
+			assert.Nil(t, m, fmt.Sprintf("匹配内容 - 本土尚在医学观察失败：(%d) %q => nil", i, c[0]))
+		}
+
+		// 境外输入尚在医学观察
+		m = reDailyImportedUnderMedicalObservation.FindStringSubmatch(c[0])
+		if len(c[12]) > 0 {
+			assert.NotNil(t, m, fmt.Sprintf("匹配内容 - 境外输入尚在医学观察失败：(%d) %q => nil", i, c[0]))
+			if len(m) > 0 {
+				assert.Equal(t, c[12], m[1], fmt.Sprintf("匹配内容 - 境外输入尚在医学观察失败：(%d) %q => nil", i, c[0]))
+			}
+		} else {
+			assert.Nil(t, m, fmt.Sprintf("匹配内容 - 境外输入尚在医学观察失败：(%d) %q => nil", i, c[0]))
+		}
+
+	}
+
+}
+
 func TestParseDailyContentRegion(t *testing.T) {
 	type Case struct {
 		Content string
