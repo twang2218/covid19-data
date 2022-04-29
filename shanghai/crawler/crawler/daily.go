@@ -34,9 +34,10 @@ type DailyCrawler struct {
 }
 
 const (
-	LINK_DAILY_1 string = "https://wsjkw.sh.gov.cn/xwfb/index.html"
+	LINK_DAILY_0 string = "https://wsjkw.sh.gov.cn/xwfb/index.html"
+	LINK_DAILY_1 string = "https://wsjkw.sh.gov.cn/xwfb/index{page}.html"
 	LINK_DAILY_2 string = "https://ss.shanghai.gov.cn/search?q=%E6%96%B0%E5%A2%9E%E6%9C%AC%E5%9C%9F%20%E5%B1%85%E4%BD%8F%E5%9C%B0%E4%BF%A1%E6%81%AF&page={page}&view=xwzx&contentScope=1&dateOrder=2&tr=4&dr=&format=1&re=2&all=1&siteId=wsjkw.sh.gov.cn&siteArea=all"
-	MAX_PAGES    int    = 10
+	MAX_PAGES    int    = 25
 )
 
 var DATE_RESIDENT_MERGED time.Time = time.Date(2022, 3, 18, 0, 0, 0, 0, time.Local)
@@ -69,6 +70,7 @@ func NewDailyCrawler(cache_dir string) *DailyCrawler {
 	hc.cItem.OnRequest(func(r *colly.Request) {
 		r.ResponseCharacterEncoding = "utf-8"
 		atomic.AddInt32(&hc.PageTotal, 1)
+		// log.Tracef("NewDailyCrawler(): cItem.Request(): %s\n", r.URL)
 	})
 	hc.cItem.OnScraped(func(r *colly.Response) {
 		atomic.AddInt32(&hc.PageVisited, 1)
@@ -83,17 +85,15 @@ func NewDailyCrawler(cache_dir string) *DailyCrawler {
 		}(resp.Request.URL.String())
 	})
 	//	添加解析具体页面函数
-	///	疫情通报、居住地信息
-	hc.cItem.OnHTML(".Article", hc.parseItem)
-	///	微信居住地信息
-	hc.cItem.OnHTML("#page-content", hc.parseItem)
+	///	疫情通报、居住地信息; 微信居住地信息
+	hc.cItem.OnHTML(".Article, #page-content", hc.parseItem)
 
 	//	创建索引爬虫
 	hc.cIndex = hc.cItem.Clone()
 	extensions.RandomUserAgent(hc.cIndex)
 	hc.cIndex.OnRequest(func(r *colly.Request) {
 		// r.ResponseCharacterEncoding = "gb2312"
-		log.Debugf("DailyCrawler => %s", r.URL)
+		// log.Debugf("DailyCrawler => %s", r.URL)
 	})
 	hc.cIndex.OnError(func(resp *colly.Response, err error) {
 		log.Warnf("DailyIndexCrawler.OnError(): [Index] (%s) => '%s'", resp.Request.URL, err)
@@ -104,8 +104,7 @@ func NewDailyCrawler(cache_dir string) *DailyCrawler {
 		}(resp.Request.URL.String())
 	})
 	//	添加索引解析函数
-	// hc.cIndex.OnHTML(".list-date a", hc.parseIndex)
-	hc.cIndex.OnHTML(".result a", hc.parseIndex)
+	hc.cIndex.OnHTML(".list-date a, .result a", hc.parseIndex)
 
 	hc.listenersDaily = []func(model.Daily){}
 
@@ -114,15 +113,22 @@ func NewDailyCrawler(cache_dir string) *DailyCrawler {
 
 func (c *DailyCrawler) Collect() {
 	//	开始抓取
-	// c.cItem.Visit("https://wsjkw.sh.gov.cn/xwfb/20220425/e1635e9e319b4c08a9249d3ae930aaa0.html")
+	c.cItem.Visit("https://mp.weixin.qq.com/s/aDU54MGe9XPWEMrdKMRFww")
 	///（循环以抓取指定页数）
 	// c.cIndex.Visit(LINK_DAILY_1)
 	for i := 1; i < MAX_PAGES; i++ {
-		// if i > 1 {
-		// 	page = fmt.Sprintf("_%d", i)
-		// }
-		page := strconv.Itoa(i)
-		link := strings.ReplaceAll(LINK_DAILY_2, "{page}", page)
+		//	新闻中心 > 新闻发布
+		page := ""
+		if i > 1 {
+			page = fmt.Sprintf("_%d", i)
+		}
+		link := strings.ReplaceAll(LINK_DAILY_1, "{page}", page)
+
+		//	全文检索
+		// page := strconv.Itoa(i)
+		// link := strings.ReplaceAll(LINK_DAILY_2, "{page}", page)
+
+		//	访问
 		c.cIndex.Visit(link)
 	}
 	//	等待结束
@@ -133,31 +139,31 @@ func (c *DailyCrawler) Collect() {
 func (c *DailyCrawler) parseItem(e *colly.HTMLElement) {
 	var d model.Daily
 	d.Source = e.Request.URL.String()
-	// cs.Source = e.Response.Request.URL.String()
-	// fmt.Println(cs.Source)
+	// d.Source = e.Response.Request.URL.String()
+	// fmt.Println(d.Source)
 
 	// 标题
 	title := strings.TrimSpace(e.ChildText("#ivs_title, .rich_media_title"))
-	// log.Tracef("DailyCrawler.parseItem(): [%s] %q", cs.Date.Format("2006-01-02"), title)
+	// log.Tracef("DailyCrawler.parseItem(%s): %s => %q\n", e.Attr("id"), e.Request.URL, title)
 
 	if err := parseDailyTitle(&d, title); err != nil {
 		log.Errorf("解析文章标题失败：%s => %q", err, title)
 	}
 
 	// log.Tracef("DailyCrawler.parseItem(): [%s] 本土 (新增:%d, 无症状: %d), 境外输入 (新增:%d, 无症状: %d), 出院: %d, 解除医学观察: %d",
-	// 	cs.Date.Format("2006-01-02"),
-	// 	cs.LocalConfirmed,
-	// 	cs.LocalAsymptomatic,
-	// 	cs.ImportedConfirmed,
-	// 	cs.ImportedAsymptomatic,
-	// 	cs.DischargedFromHospital,
-	// 	cs.DischargedFromMedicalObservation,
+	// 	d.Date.Format("2006-01-02"),
+	// 	d.LocalConfirmed,
+	// 	d.LocalAsymptomatic,
+	// 	d.ImportedConfirmed,
+	// 	d.ImportedAsymptomatic,
+	// 	d.DischargedFromHospital,
+	// 	d.DischargedFromMedicalObservation,
 	// )
 
 	// content := strings.TrimSpace(e.ChildText("#ivs_content"))
 	//	上面的代码会去掉所有换行，导致匹配失败，因此用下面的方式行于行之间用 '\n' 链接
 	content_lines := []string{}
-	e.ForEach("#ivs_content p, section strong, section p", func(i int, h *colly.HTMLElement) {
+	e.ForEach("#ivs_content p, section > strong, section > span > strong, section > p", func(i int, h *colly.HTMLElement) {
 		t := strings.TrimSpace(h.Text)
 		if len(t) > 0 {
 			content_lines = append(content_lines, t)
@@ -165,20 +171,21 @@ func (c *DailyCrawler) parseItem(e *colly.HTMLElement) {
 	})
 	content := strings.Join(content_lines, "\n")
 
-	// log.Debugf("[%s] <%s>: %s", cs.Date.Format("2006-01-02"), title, cs.Source)
+	// log.Tracef("[%s] <%s>: %s", d.Date.Format("2006-01-02"), title, d.Source)
 
 	if !strings.Contains(title, "居住地信息") {
+		// log.Tracef("[%s] <%s>: 每日疫情信息统计", d.Date.Format("2006-01-02"), title)
 		//	每日疫情信息统计
 		if err := parseDailyContent(&d, content); err != nil {
 			log.Errorf("[%s] 解析文章内容失败：%s => %q", d.Date.Format("2006-01-02"), err, title)
 		}
 		// log.Tracef("DailyCrawler.parseItem(): [%s] 本土（无症状=>确诊:%d, 出院:%d），境外输入 (出院:%d); 解除医学观察（本土:%d，境外输入:%d）",
-		// 	cs.Date.Format("2006-01-02"),
-		// 	cs.LocalConfirmedFromAsymptomatic,
-		// 	cs.LocalDischargedFromHospital,
-		// 	cs.ImportedDischargedFromHospital,
-		// 	cs.LocalDischargedFromMedicalObservation,
-		// 	cs.ImportedDischargedFromMedicalObservation,
+		// 	d.Date.Format("2006-01-02"),
+		// 	d.LocalConfirmedFromAsymptomatic,
+		// 	d.LocalDischargedFromHospital,
+		// 	d.ImportedDischargedFromHospital,
+		// 	d.LocalDischargedFromMedicalObservation,
+		// 	d.ImportedDischargedFromMedicalObservation,
 		// )
 
 		fixDaily(&d)
@@ -187,6 +194,7 @@ func (c *DailyCrawler) parseItem(e *colly.HTMLElement) {
 		c.notifyAllOnDailyListeners(d)
 	}
 	if strings.Contains(title, "居住地信息") || d.Date.Before(DATE_RESIDENT_MERGED) {
+		// log.Tracef("[%s] <%s>: 居住地信息统计", d.Date.Format("2006-01-02"), title)
 		//	居住地信息统计
 		rs := make(model.Residents, 0)
 		if err := parseResidents(&rs, d.Date, content); err != nil {
@@ -195,6 +203,7 @@ func (c *DailyCrawler) parseItem(e *colly.HTMLElement) {
 			// log.Infof("[%s] 解析到 %d 个感染病例居住地信息。", d.Date.Format("2006-01-02"), len(rs))
 			c.notifyAllOnResidentsListeners(rs)
 		}
+		// log.Tracef("[%s] <%s>: 居住地信息统计: rs => [%d]", d.Date.Format("2006-01-02"), title, len(rs))
 	}
 }
 
@@ -215,8 +224,8 @@ func (c *DailyCrawler) parseIndex(e *colly.HTMLElement) {
 var (
 	reDailyDate1                            = regexp.MustCompile(`海(?P<date>\d+年\d+月\d+日)`)
 	reDailyDate2                            = regexp.MustCompile(`(?P<date>\d+月\d+日)`)
-	reDailyLocalConfirmed                   = regexp.MustCompile(`(?:本土新冠肺炎确诊病例|新增)(?P<number>\d+)(?:例|例本土新冠肺炎确诊(?:病例)?)(?:[，。（ ]|$)`)
-	reDailyLocalAsymptomatic                = regexp.MustCompile(`(?:本土无症状感染者|新增)(?P<number>\d+)(?:例|例本土无症状感染者)(?:[，。（ ]|$)`)
+	reDailyLocalConfirmed                   = regexp.MustCompile(`(?:本土[新冠肺炎]*确诊病例|新增)(?P<number>\d+)(?:例|例本土新冠肺炎确诊(?:病例)?)(?:[、，。（ ]|$)`)
+	reDailyLocalAsymptomatic                = regexp.MustCompile(`(?:本土)?(?:无症状感染者|新增)(?P<number>\d+)(?:例|例本土无症状感染者)(?:[、，。（ ]|$)`)
 	reDailyImportedConfirmed                = regexp.MustCompile(`境外输入(?:性新冠肺炎确诊)?(?:病例)?(?P<number>\d+)例`)
 	reDailyImportedAsymptomatic             = regexp.MustCompile(`境外输入性无症状感染者(?P<number>\d+)例`)
 	reDailyDischargedFromHospital           = regexp.MustCompile(`治愈出院(?P<number>\d+)例`)
@@ -326,7 +335,7 @@ func parseDailyTitle(d *model.Daily, title string) error {
 }
 
 var (
-	reDailyLocalConfirmedFromAsymptomatic           = regexp.MustCompile(`—24时.*本土.*含(?P<number>\d+)例由无症状感染者转为确诊病例`)
+	reDailyLocalConfirmedFromAsymptomatic           = regexp.MustCompile(`—24时.*本土.*(?:含|其中)(?P<number>\d+)例(?:确诊病例)?(?:由|为既往)无症状感染者(?:转为确诊病例|转归)`)
 	reDailyLocalDischargedFromHospital              = regexp.MustCompile(`—24时.*本土.*治愈出院(?P<number>\d+)例`)
 	reDailyImportedDischargedFromHospital           = regexp.MustCompile(`—24\s*时.*境外输入.*治愈出院(?P<number>\d+)例`)
 	reDailyDischargedFromMedicalObservation2        = regexp.MustCompile(`—24时.*解除医学观察无症状感染者(?P<number>\d+)例`)
@@ -365,6 +374,19 @@ func parseDailyContent(d *model.Daily, content string) error {
 	content = strings.ReplaceAll(content, "无症状\n", "无症状")
 	content = strings.ReplaceAll(content, "无症状感染\n", "无症状感染")
 	content = strings.ReplaceAll(content, "无症状感染者\n", "无症状感染者")
+
+	// 境外输入确诊 (补充标题缺失)
+	if d.ImportedConfirmed == 0 {
+		m = reDailyImportedConfirmed.FindStringSubmatch(content)
+		if m == nil {
+			// log.Warnf("[%s] 无法解析文章内容中境外输入确诊：%q", d.Date.Format("2006-01-02"), content)
+		} else {
+			d.ImportedConfirmed, err = strconv.Atoi(m[1])
+			if err != nil {
+				return fmt.Errorf("[%s] 无法解析文章内容中境外输入确诊：%q", d.Date.Format("2006-01-02"), m[1])
+			}
+		}
+	}
 
 	// 境外输入无症状 (补充标题缺失)
 	if d.ImportedAsymptomatic == 0 {
@@ -982,7 +1004,7 @@ func parseResidents(rs *model.Residents, date time.Time, content string) error {
 	var mm [][]string
 	var err error
 
-	// if date.Format("2006-01-02") == "2022-04-21" {
+	// if date.Format("2006-01-02") == "2022-04-28" {
 	// 	fmt.Printf("[%s] <<<<content>>>>\n%s\n<<<<<<<>>>>>>>>\n", date.Format("2006-01-02"), content)
 	// 	// fmt.Printf("[%s] > %q\n", date.Format("2006-01-02"), m[0])
 	// }
