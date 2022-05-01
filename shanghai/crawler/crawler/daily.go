@@ -113,7 +113,7 @@ func NewDailyCrawler(cache_dir string) *DailyCrawler {
 
 func (c *DailyCrawler) Collect() {
 	//	开始抓取
-	c.cItem.Visit("https://mp.weixin.qq.com/s/aDU54MGe9XPWEMrdKMRFww")
+	c.cItem.Visit("https://mp.weixin.qq.com/s/lCLtEnZj04R2ASLdgzViDw")
 	///（循环以抓取指定页数）
 	// c.cIndex.Visit(LINK_DAILY_1)
 	for i := 1; i < MAX_PAGES; i++ {
@@ -222,7 +222,7 @@ func (c *DailyCrawler) parseIndex(e *colly.HTMLElement) {
 //	解析 Daily
 
 var (
-	reDailyDate1                            = regexp.MustCompile(`海(?P<date>\d+年\d+月\d+日)`)
+	reDailyDate1                            = regexp.MustCompile(`[海： ](?P<date>\d+年\d+月\d+日)`)
 	reDailyDate2                            = regexp.MustCompile(`(?P<date>\d+月\d+日)`)
 	reDailyLocalConfirmed                   = regexp.MustCompile(`(?:本土[新冠肺炎]*确诊病例|新增)(?P<number>\d+)(?:例|例本土新冠肺炎确诊(?:病例)?)(?:[、，。（ ]|$)`)
 	reDailyLocalAsymptomatic                = regexp.MustCompile(`(?:本土)?(?:无症状感染者|新增)(?P<number>\d+)(?:例|例本土无症状感染者)(?:[、，。（ ]|$)`)
@@ -335,29 +335,30 @@ func parseDailyTitle(d *model.Daily, title string) error {
 }
 
 var (
-	reDailyLocalConfirmedFromAsymptomatic           = regexp.MustCompile(`—24时.*本土.*(?:含|其中)(?P<number>\d+)例(?:确诊病例)?(?:由|为既往)无症状感染者(?:转为确诊病例|转归)`)
-	reDailyLocalDischargedFromHospital              = regexp.MustCompile(`—24时.*本土.*治愈出院(?P<number>\d+)例`)
-	reDailyImportedDischargedFromHospital           = regexp.MustCompile(`—24\s*时.*境外输入.*治愈出院(?P<number>\d+)例`)
+	reDailyDate3                                    = regexp.MustCompile(`通报：(?P<date>\d+年\d+月\d+日)0—24时`)
+	reDailyUnderMedicalObservation                  = regexp.MustCompile(`24时[^。]+尚在医学观察中的[无症状]+感染者(?P<number>\d+)例`)
 	reDailyDischargedFromMedicalObservation2        = regexp.MustCompile(`—24时.*解除医学观察无症状感染者(?P<number>\d+)例`)
-	reDailyLocalDischargedFromMedicalObservation    = regexp.MustCompile(`—24时.*(?:新增本土.*解除医学观察|解除医学观察.*本土)无症状感染者(?P<number>\d+)例`)
-	reDailyImportedDischargedFromMedicalObservation = regexp.MustCompile(`—24时.*解除医学观察.*境外输入性无症状感染者(?P<number>\d+)例`)
-	reDailyImportedAsymptomatic2                    = regexp.MustCompile(`—24时.*境外输入性无症状感染者(?P<number>\d+)例`)
 	reDailyLocalConfirmedFromBubble                 = regexp.MustCompile(`—24时.*，(?:其中)?(?P<number>\d+)例确诊病例和.*在隔离管控中发现`)
+	reDailyLocalConfirmedFromAsymptomatic           = regexp.MustCompile(`—24时.*本土.*(?:含|其中)(?P<number>\d+)例(?:确诊病例)?(?:由|为既往)无症状感染者(?:转为确诊病例|转归)`)
 	reDailyLocalAsymptomaticFromBubble              = regexp.MustCompile(`—24时.*和(?P<number>\d+)例无症状感染者在隔离管控中发现`)
+	reDailyLocalDischargedFromHospital              = regexp.MustCompile(`—24时.*本土.*治愈出院(?P<number>\d+)例`)
+	reDailyLocalDischargedFromMedicalObservation    = regexp.MustCompile(`—24时.*(?:新增本土.*解除医学观察|解除医学观察.*本土)无症状感染者(?P<number>\d+)例`)
+	reDailyLocalInHospital                          = regexp.MustCompile(`24时[^。]+累计[^。]*本土[^。]*在院治疗(?P<number>\d+)例`)
+	reDailyLocalUnderMedicalObservation             = regexp.MustCompile(`24时[^。]+尚在医学观察中[^。]+本土无症状感染者(?P<number>\d+)[例，]`)
 	reDailyLocalDeath                               = regexp.MustCompile(`—24时.*本土.*死亡(?:病例)?(?P<number>\d+)例`)
+	reDailyImportedAsymptomatic2                    = regexp.MustCompile(`—24时.*境外输入性无症状感染者(?P<number>\d+)例`)
+	reDailyImportedDischargedFromHospital           = regexp.MustCompile(`—24\s*时.*境外输入.*治愈出院(?P<number>\d+)例`)
+	reDailyImportedDischargedFromMedicalObservation = regexp.MustCompile(`—24时.*解除医学观察.*境外输入性无症状感染者(?P<number>\d+)例`)
+	reDailyImportedInHospital                       = regexp.MustCompile(`24时[^。]+累计[^。]*境外输入[^。]*在院治疗(?P<number>\d+)例`)
+	reDailyImportedUnderMedicalObservation          = regexp.MustCompile(`24时[^。]+尚在医学观察中[^。]*境外输入性?无症状[感染者]+(?P<number>\d+)[例，。]`)
 	reDailyImportedDeath                            = regexp.MustCompile(`—24时.*境外输入.*死亡(?:病例)?(?P<number>\d+)例`)
+	reDailySevere                                   = regexp.MustCompile(`24时[^。]+累计[^。]*本土[^。危]*重[型症](?P<number>\d+)例`)
+	reDailyCritical                                 = regexp.MustCompile(`24时[^。]+累计[^。]*本土[^。]*危重型(?P<number>\d+)例`)
 	reDailyTotalLocalConfirmed                      = regexp.MustCompile(`24时[^。]+累计本土确诊(?:病例)?(?P<number>\d+)例`)
 	reDailyTotalLocalDischargedFromHospital         = regexp.MustCompile(`24时[^。]+累计[^。]*本土[^。]*治愈出院(?P<number>\d+)例`)
 	reDailyTotalLocalDeath                          = regexp.MustCompile(`24时[^。]+累计[^。]*(?:本土)?[^。]*死亡(?P<number>\d+)例`)
-	reDailyLocalInHospital                          = regexp.MustCompile(`24时[^。]+累计[^。]*本土[^。]*在院治疗(?P<number>\d+)例`)
-	reDailySevere                                   = regexp.MustCompile(`24时[^。]+累计[^。]*本土[^。危]*重[型症](?P<number>\d+)例`)
-	reDailyCritical                                 = regexp.MustCompile(`24时[^。]+累计[^。]*本土[^。]*危重型(?P<number>\d+)例`)
 	reDailyTotalImportedConfirmed                   = regexp.MustCompile(`24时[^。]+累计[^。]*境外输入[^。]*确诊病例(?P<number>\d+)例`)
 	reDailyTotalImportedDischargedFromHospital      = regexp.MustCompile(`24时[^。]+累计[^。]*境外输入[^。]*出院(?P<number>\d+)例`)
-	reDailyImportedInHospital                       = regexp.MustCompile(`24时[^。]+累计[^。]*境外输入[^。]*在院治疗(?P<number>\d+)例`)
-	reDailyUnderMedicalObservation                  = regexp.MustCompile(`24时[^。]+尚在医学观察中的[无症状]+感染者(?P<number>\d+)例`)
-	reDailyLocalUnderMedicalObservation             = regexp.MustCompile(`24时[^。]+尚在医学观察中[^。]+本土无症状感染者(?P<number>\d+)[例，]`)
-	reDailyImportedUnderMedicalObservation          = regexp.MustCompile(`24时[^。]+尚在医学观察中[^。]*境外输入性?无症状[感染者]+(?P<number>\d+)[例，。]`)
 )
 
 // 解析 Daily 内容
@@ -374,6 +375,60 @@ func parseDailyContent(d *model.Daily, content string) error {
 	content = strings.ReplaceAll(content, "无症状\n", "无症状")
 	content = strings.ReplaceAll(content, "无症状感染\n", "无症状感染")
 	content = strings.ReplaceAll(content, "无症状感染者\n", "无症状感染者")
+
+	// 日期 (补充标题缺失)
+	if time.Time.IsZero(d.Date) {
+		m = reDailyDate3.FindStringSubmatch(content)
+		if m == nil {
+			// log.Warnf("[%s] 无法解析文章内容中日期：%q", d.Date.Format("2006-01-02"), content)
+		} else {
+			d.Date, err = time.Parse("2006年1月2日", m[1])
+			if err != nil {
+				return fmt.Errorf("[%s] 无法解析文章内容中日期：%q", d.Date.Format("2006-01-02"), m[1])
+			}
+		}
+	}
+
+	// log.Tracef("[%s] 解析文章内容：(%d)", d.Date.Format("2006-01-02"), len(content))
+
+	// 本土新增 (补充标题缺失)
+	if d.LocalConfirmed == 0 {
+		m = reDailyLocalConfirmed.FindStringSubmatch(content)
+		if m == nil {
+			// log.Warnf("[%s] 无法解析文章内容中本土新增：%q", d.Date.Format("2006-01-02"), content)
+		} else {
+			d.LocalConfirmed, err = strconv.Atoi(m[1])
+			if err != nil {
+				return fmt.Errorf("[%s] 无法解析文章内容中本土新增：%q", d.Date.Format("2006-01-02"), m[1])
+			}
+		}
+	}
+
+	// 本土无症状 (补充标题缺失)
+	if d.LocalAsymptomatic == 0 {
+		m = reDailyLocalAsymptomatic.FindStringSubmatch(content)
+		if m == nil {
+			// log.Warnf("[%s] 无法解析文章内容中本土无症状：%q", d.Date.Format("2006-01-02"), content)
+		} else {
+			d.LocalAsymptomatic, err = strconv.Atoi(m[1])
+			if err != nil {
+				return fmt.Errorf("[%s] 无法解析文章内容中本土无症状：%q", d.Date.Format("2006-01-02"), m[1])
+			}
+		}
+	}
+
+	// 境外输入确诊 (补充标题缺失)
+	if d.ImportedConfirmed == 0 {
+		m = reDailyImportedConfirmed.FindStringSubmatch(content)
+		if m == nil {
+			// log.Warnf("[%s] 无法解析文章内容中境外输入确诊：%q", d.Date.Format("2006-01-02"), content)
+		} else {
+			d.ImportedConfirmed, err = strconv.Atoi(m[1])
+			if err != nil {
+				return fmt.Errorf("[%s] 无法解析文章内容中境外输入确诊：%q", d.Date.Format("2006-01-02"), m[1])
+			}
+		}
+	}
 
 	// 境外输入确诊 (补充标题缺失)
 	if d.ImportedConfirmed == 0 {
