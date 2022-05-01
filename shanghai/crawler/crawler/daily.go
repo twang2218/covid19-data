@@ -113,7 +113,7 @@ func NewDailyCrawler(cache_dir string) *DailyCrawler {
 
 func (c *DailyCrawler) Collect() {
 	//	开始抓取
-	c.cItem.Visit("https://mp.weixin.qq.com/s/lCLtEnZj04R2ASLdgzViDw")
+	c.cItem.Visit("https://mp.weixin.qq.com/s/qbB7VjEXMTK0zB6JIqBbAA")
 	///（循环以抓取指定页数）
 	// c.cIndex.Visit(LINK_DAILY_1)
 	for i := 1; i < MAX_PAGES; i++ {
