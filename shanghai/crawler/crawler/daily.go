@@ -37,7 +37,7 @@ const (
 	LINK_DAILY_0 string = "https://wsjkw.sh.gov.cn/xwfb/index.html"
 	LINK_DAILY_1 string = "https://wsjkw.sh.gov.cn/xwfb/index{page}.html"
 	LINK_DAILY_2 string = "https://ss.shanghai.gov.cn/search?q=%E6%96%B0%E5%A2%9E%E6%9C%AC%E5%9C%9F%20%E5%B1%85%E4%BD%8F%E5%9C%B0%E4%BF%A1%E6%81%AF&page={page}&view=xwzx&contentScope=1&dateOrder=2&tr=4&dr=&format=1&re=2&all=1&siteId=wsjkw.sh.gov.cn&siteArea=all"
-	MAX_PAGES    int    = 25
+	MAX_PAGES    int    = 30
 )
 
 var DATE_RESIDENT_MERGED time.Time = time.Date(2022, 3, 18, 0, 0, 0, 0, time.Local)
@@ -45,11 +45,6 @@ var DATE_RESIDENT_MERGED time.Time = time.Date(2022, 3, 18, 0, 0, 0, 0, time.Loc
 func NewDailyCrawler(cache_dir string) *DailyCrawler {
 	hc := DailyCrawler{}
 	//	创建基础爬虫
-	// u, err := url.Parse(LINK_DAILY)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
 	hc.cItem = colly.NewCollector(
 		colly.AllowedDomains(
 			"wsjkw.sh.gov.cn",
@@ -113,7 +108,7 @@ func NewDailyCrawler(cache_dir string) *DailyCrawler {
 
 func (c *DailyCrawler) Collect() {
 	//	开始抓取
-	c.cItem.Visit("https://mp.weixin.qq.com/s/qbB7VjEXMTK0zB6JIqBbAA")
+	c.cItem.Visit("https://mp.weixin.qq.com/s/agdZHOqVZh9atNHOQEFTog")
 	///（循环以抓取指定页数）
 	// c.cIndex.Visit(LINK_DAILY_1)
 	for i := 1; i < MAX_PAGES; i++ {
@@ -222,10 +217,9 @@ func (c *DailyCrawler) parseIndex(e *colly.HTMLElement) {
 //	解析 Daily
 
 var (
-	reDailyDate1                            = regexp.MustCompile(`[海： ](?P<date>\d+年\d+月\d+日)`)
-	reDailyDate2                            = regexp.MustCompile(`(?P<date>\d+月\d+日)`)
-	reDailyLocalConfirmed                   = regexp.MustCompile(`(?:本土[新冠肺炎]*确诊病例|新增)(?P<number>\d+)(?:例|例本土新冠肺炎确诊(?:病例)?)(?:[、，。（ ]|$)`)
-	reDailyLocalAsymptomatic                = regexp.MustCompile(`(?:本土)?(?:无症状感染者|新增)(?P<number>\d+)(?:例|例本土无症状感染者)(?:[、，。（ ]|$)`)
+	reDailyDate                             = regexp.MustCompile(`(?:^|[：】海京]+)(?P<date>(?:\d+年)?\d+月\d+日)(?:[，（]+|0—24时|[^，]+新增)`)
+	reDailyLocalConfirmed                   = regexp.MustCompile(`(?:[^累计]+本土[新冠肺炎]*确诊病例|新增)(?P<number>\d+)(?:例|例本土新冠肺炎确诊(?:病例)?)(?:[、，。（ ]|$)`)
+	reDailyLocalAsymptomatic                = regexp.MustCompile(`新增(?:本土无症状感染者)?(?P<number>\d+)(?:例|例本土无症状感染者)(?:[、，。（ ]|$)`)
 	reDailyImportedConfirmed                = regexp.MustCompile(`境外输入(?:性新冠肺炎确诊)?(?:病例)?(?P<number>\d+)例`)
 	reDailyImportedAsymptomatic             = regexp.MustCompile(`境外输入性无症状感染者(?P<number>\d+)例`)
 	reDailyDischargedFromHospital           = regexp.MustCompile(`治愈出院(?P<number>\d+)例`)
@@ -242,18 +236,15 @@ func parseDailyTitle(d *model.Daily, title string) error {
 	var err error
 
 	// 标题日期
-	m = reDailyDate1.FindStringSubmatch(title)
+	m = reDailyDate.FindStringSubmatch(title)
 	if m == nil {
-		m = reDailyDate2.FindStringSubmatch(title)
-		if m == nil {
-			return fmt.Errorf("[%s] 无法解析文章标题中日期：%q", d.Date.Format("2006-01-02"), title)
-		}
-		d.Date, err = time.Parse("2006年1月2日", fmt.Sprintf("2022年%s", m[1]))
-		if err != nil {
-			return fmt.Errorf("[%s] 无法解析文章标题中日期：%q", d.Date.Format("2006-01-02"), m[1])
-		}
+		return fmt.Errorf("[%s] 无法解析文章标题中日期：%q", d.Date.Format("2006-01-02"), title)
 	} else {
-		d.Date, err = time.Parse("2006年1月2日", m[1])
+		s := m[1]
+		if !strings.Contains(m[1], "年") {
+			s = fmt.Sprintf("2022年%s", m[1])
+		}
+		d.Date, err = time.Parse("2006年1月2日", s)
 		if err != nil {
 			return fmt.Errorf("[%s] 无法解析文章标题中日期：%q", d.Date.Format("2006-01-02"), m[1])
 		}
@@ -335,7 +326,6 @@ func parseDailyTitle(d *model.Daily, title string) error {
 }
 
 var (
-	reDailyDate3                                    = regexp.MustCompile(`通报：(?P<date>\d+年\d+月\d+日)0—24时`)
 	reDailyUnderMedicalObservation                  = regexp.MustCompile(`24时[^。]+尚在医学观察中的[无症状]+感染者(?P<number>\d+)例`)
 	reDailyDischargedFromMedicalObservation2        = regexp.MustCompile(`—24时.*解除医学观察无症状感染者(?P<number>\d+)例`)
 	reDailyLocalConfirmedFromBubble                 = regexp.MustCompile(`—24时.*，(?:其中)?(?P<number>\d+)例确诊病例和.*在隔离管控中发现`)
@@ -378,7 +368,7 @@ func parseDailyContent(d *model.Daily, content string) error {
 
 	// 日期 (补充标题缺失)
 	if time.Time.IsZero(d.Date) {
-		m = reDailyDate3.FindStringSubmatch(content)
+		m = reDailyDate.FindStringSubmatch(content)
 		if m == nil {
 			// log.Warnf("[%s] 无法解析文章内容中日期：%q", d.Date.Format("2006-01-02"), content)
 		} else {

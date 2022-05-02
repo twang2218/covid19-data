@@ -3,7 +3,6 @@ package crawler
 import (
 	"crawler/model"
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
@@ -14,66 +13,80 @@ func TestRegexpDailyTitle(t *testing.T) {
 	testcases := [][]string{
 		{
 			"上海2022年4月21日，新增本土新冠肺炎确诊病例1931例 新增本土无症状感染者15698例 无新增境外输入性新冠肺炎确诊病例 无新增境外输入性无症状感染者",
-			"2022年4月21日",
-			"1931",
-			"15698",
-			"",
-			"",
+			"2022年4月21日", // 日期
+			"1931",       // 本土新增确诊
+			"15698",      // 本土新增无症状
+			"",           // 境外新增确诊
+			"",           // 境外新增无症状
 		},
 		{
 			"4月21日，新增本土新冠肺炎确诊病例1931例 新增本土无症状感染者15698例 无新增境外输入性新冠肺炎确诊病例 无新增境外输入性无症状感染者",
-			"4月21日",
-			"1931",
-			"15698",
-			"",
-			"",
+			"4月21日", // 日期
+			"1931",  // 本土新增确诊
+			"15698", // 本土新增无症状
+			"",      // 境外新增确诊
+			"",      // 境外新增无症状
 		},
 		{
 			"4月24日（0-24时）上海新增2472例本土新冠肺炎确诊病例，新增16983例本土无症状感染者",
-			"4月24日",
-			"2472",
-			"16983",
-			"",
+			"4月24日", // 日期
+			"2472",  // 本土新增确诊
+			"16983", // 本土新增无症状
+			"",      // 境外新增确诊
 			"",
 		},
 		{
 			"海2022年4月24日，新增本土新冠肺炎确诊病例2472例 新增本土无症状感染者16983例 无新增境外输入性新冠肺炎确诊病例 新增境外输入性无症状感染者1例",
-			"2022年4月24日",
-			"2472",
-			"16983",
-			"",
+			"2022年4月24日", // 日期
+			"2472",       // 本土新增确诊
+			"16983",      // 本土新增无症状
+			"",           // 境外新增确诊
 			"1",
+		},
+		{
+			"4月18日上海新增新增境外输入性新冠肺炎确诊病例25例 新增境外输入性无症状感染者10例 解除医学观察无症状感染者4例 治愈出院8例",
+			"4月18日", // 日期
+			"",      // 本土新增确诊
+			"",      // 本土新增无症状
+			"25",    // 境外新增确诊
+			"10",    // 境外新增无症状
 		},
 	}
 
 	for i, c := range testcases {
 		var m []string
 		//	日期
-		if strings.Contains(c[0], "年") {
-			m = reDailyDate1.FindStringSubmatch(c[0])
+		m = reDailyDate.FindStringSubmatch(c[0])
+		if len(c[1]) > 0 {
 			assert.NotNil(t, m, fmt.Sprintf("匹配标题 - 日期失败：(%d) %q => nil", i, c[0]))
 			if len(m) > 0 {
 				assert.Equal(t, c[1], m[1], fmt.Sprintf("匹配标题 - 日期失败：(%d) %q => nil", i, c[0]))
 			}
 		} else {
-			m = reDailyDate2.FindStringSubmatch(c[0])
-			assert.NotNil(t, m, fmt.Sprintf("匹配标题 - 日期失败：(%d) %q => nil", i, c[0]))
-			if len(m) > 0 {
-				assert.Equal(t, c[1], m[1], fmt.Sprintf("匹配标题 - 日期失败：(%d) %q => nil", i, c[0]))
-			}
+			assert.Nil(t, m, fmt.Sprintf("匹配标题 - 日期失败：(%d) %q => nil", i, c[0]))
 		}
+
 		// 本土确诊
 		m = reDailyLocalConfirmed.FindStringSubmatch(c[0])
-		assert.NotNil(t, m, fmt.Sprintf("匹配标题 - 本土确诊失败：(%d) %q => nil", i, c[0]))
-		if len(m) > 0 {
-			assert.Equal(t, c[2], m[1], fmt.Sprintf("匹配标题 - 本土确诊失败：(%d) %q => nil", i, c[0]))
+		if len(c[2]) > 0 {
+			assert.NotNil(t, m, fmt.Sprintf("匹配标题 - 本土确诊失败：(%d) %q => nil", i, c[0]))
+			if len(m) > 0 {
+				assert.Equal(t, c[2], m[1], fmt.Sprintf("匹配标题 - 本土确诊失败：(%d) %q => nil", i, c[0]))
+			}
+		} else {
+			assert.Nil(t, m, fmt.Sprintf("匹配标题 - 本土确诊失败：(%d) %q => nil", i, c[0]))
 		}
 		// 本土无症状
 		m = reDailyLocalAsymptomatic.FindStringSubmatch(c[0])
-		assert.NotNil(t, m, fmt.Sprintf("匹配标题 - 本土无症状失败：(%d) %q => nil", i, c[0]))
-		if len(m) > 0 {
-			assert.Equal(t, c[3], m[1], fmt.Sprintf("匹配标题 - 本土无症状失败：(%d) %q => nil", i, c[0]))
+		if len(c[3]) > 0 {
+			assert.NotNil(t, m, fmt.Sprintf("匹配标题 - 本土无症状失败：(%d) %q => nil", i, c[0]))
+			if len(m) > 0 {
+				assert.Equal(t, c[3], m[1], fmt.Sprintf("匹配标题 - 本土无症状失败：(%d) %q => nil", i, c[0]))
+			}
+		} else {
+			assert.Nil(t, m, fmt.Sprintf("匹配标题 - 本土无症状失败：(%d) %q => nil", i, c[0]))
 		}
+
 		// 境外输入确诊病例
 		m = reDailyImportedConfirmed.FindStringSubmatch(c[0])
 		if len(c[4]) > 0 {
