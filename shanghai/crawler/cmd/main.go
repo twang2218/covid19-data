@@ -14,15 +14,16 @@ import (
 )
 
 const (
-	DEFAULT_FILE_DAILY     = "../data/shanghai-daily.csv"
-	DEFAULT_FILE_RESIDENTS = "../data/shanghai-daily-residents.csv"
+	DEFAULT_CITY           = "shanghai"
+	DEFAULT_FILE_DAILY     = "../data/{city}-daily.csv"
+	DEFAULT_FILE_RESIDENTS = "../data/{city}-daily-residents.csv"
 	DEFAULT_FILE_LOG       = "../data/crawler.log"
 )
 
 func main() {
 	app := &cli.App{
-		Name:  "shanghai",
-		Usage: "用于抓取上海新冠疫情数据的爬虫",
+		Name:  "crawler",
+		Usage: "用于抓取新冠疫情数据的爬虫",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "pprof",
@@ -38,12 +39,38 @@ func main() {
 				Aliases: []string{"v"},
 				Value:   false,
 			},
+			&cli.StringFlag{
+				Name:    "key_amap",
+				EnvVars: []string{"KEY_AMAP"},
+			},
+			&cli.StringFlag{
+				Name:    "key_tianditu",
+				EnvVars: []string{"KEY_TIANDITU"},
+			},
+			&cli.StringFlag{
+				Name:    "key_baidu_map",
+				EnvVars: []string{"KEY_BAIDU_MAP"},
+			},
+			&cli.StringFlag{
+				Name:  "web_cache",
+				Value: "../data/.web_cache",
+			},
+			&cli.StringFlag{
+				Name:  "geo_cache",
+				Value: "../data/.geo_cache",
+			},
 		},
 		Commands: []*cli.Command{
 			{
 				Name:  "daily",
 				Usage: "抓取每日统计信息",
 				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:    "city",
+						Aliases: []string{"c"},
+						Value:   DEFAULT_CITY,
+						// Required:    true,
+					},
 					&cli.BoolFlag{
 						Name:  "no-cache",
 						Value: false,
@@ -60,76 +87,9 @@ func main() {
 						Value:   DEFAULT_FILE_RESIDENTS,
 						// Required:    true,
 					},
-					&cli.StringFlag{
-						Name:    "key_amap",
-						EnvVars: []string{"KEY_AMAP"},
-					},
-					&cli.StringFlag{
-						Name:    "key_tianditu",
-						EnvVars: []string{"KEY_TIANDITU"},
-					},
-					&cli.StringFlag{
-						Name:    "key_baidu_map",
-						EnvVars: []string{"KEY_BAIDU_MAP"},
-					},
-					&cli.StringFlag{
-						Name:  "web_cache",
-						Value: "../data/.web_cache",
-					},
-					&cli.StringFlag{
-						Name:  "geo_cache",
-						Value: "../data/.geo_cache",
-					},
 				},
 				Action: actionCrawlDaily,
 			},
-			// {
-			// 	Name:  "locations",
-			// 	Usage: "抓取病例地址信息",
-			// 	Flags: []cli.Flag{
-			// 		&cli.StringFlag{
-			// 			Name:    "output",
-			// 			Aliases: []string{"o"},
-			// 			Value:   DEFAULT_FILE_LOCATIONS,
-			// 			// Required:    true,
-			// 		},
-			// 	},
-			// 	Action: actionCrawlLocations,
-			// },
-			// {
-			// 	Name:  "stats",
-			// 	Usage: "统计数据",
-			// 	Flags: []cli.Flag{
-			// 		&cli.StringFlag{
-			// 			Name:  "herb",
-			// 			Value: DEFAULT_FILE_HERB,
-			// 			// Required:    true,
-			// 		},
-			// 		&cli.StringFlag{
-			// 			Name:  "prescription",
-			// 			Value: DEFAULT_FILE_PRESCRIPTION,
-			// 			// Required:    true,
-			// 		},
-			// 	},
-			// 	Action: actionStats,
-			// },
-			// {
-			// 	Name:  "process",
-			// 	Usage: "处理数据（将JSON转换为CSV）",
-			// 	Flags: []cli.Flag{
-			// 		&cli.StringFlag{
-			// 			Name:  "herb",
-			// 			Value: DEFAULT_FILE_HERB,
-			// 			// Required:    true,
-			// 		},
-			// 		&cli.StringFlag{
-			// 			Name:  "prescription",
-			// 			Value: DEFAULT_FILE_PRESCRIPTION,
-			// 			// Required:    true,
-			// 		},
-			// 	},
-			// 	Action: actionProcess,
-			// },
 		},
 		Before: func(c *cli.Context) error {
 			//	profile

@@ -6,6 +6,12 @@ build:
 run:
 	go run ./cmd -v daily
 
+shanghai:
+	go run ./cmd -v daily --city=shanghai
+
+beijing:
+	go run ./cmd -v daily --city=beijing
+
 run-no-cache:
 	go run ./cmd -v daily --no-cache
 

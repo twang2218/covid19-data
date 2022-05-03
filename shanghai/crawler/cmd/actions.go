@@ -5,6 +5,7 @@ import (
 	"crawler/geocoder"
 	"crawler/model"
 	"fmt"
+	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -50,11 +51,14 @@ func actionCrawlDaily(c *cli.Context) error {
 	var ds model.Dailys
 	var rs model.Residents
 
+	city := c.String("city")
+	file_daily := strings.ReplaceAll(c.String("daily"), "{city}", city)
+	file_residents := strings.ReplaceAll(c.String("residents"), "{city}", city)
+
 	stats := make(map[time.Time]int, 0)
 	ch := make(chan model.Resident)
 
-	// gc := geocoder.NewGeocoderTianditu(c.String("key_tianditu"), c.String("geo_cache"))
-	// log.Debugf("geo_cache: %q, web_cache: %q", c.String("geo_cache"), c.String("web_cache"))
+	// log.Tracef("geo_cache: %q, web_cache: %q", c.String("geo_cache"), c.String("web_cache"))
 
 	gc := geocoder.NewGeocoderBaidu(c.String("key_baidu_map"), c.String("geo_cache"))
 	defer gc.Close()
@@ -65,14 +69,14 @@ func actionCrawlDaily(c *cli.Context) error {
 	if !c.Bool("no-cache") {
 		web_cache = c.String("web_cache")
 	}
-	crawler := crawler.NewDailyCrawler(web_cache)
+	crawler := crawler.NewDailyCrawler(c.String("city"), web_cache)
 	crawler.AddOnDailyListener(func(cs model.Daily) {
 		d := ds.Find(cs.Date)
 		if d == nil {
 			ds.Add(cs)
 			if len(ds)%100 == 0 {
-				if err := ds.SaveToCSV(c.String("daily")); err != nil {
-					log.Fatal(fmt.Errorf("无法写入文件(daily) %q: %s", c.String("daily"), err))
+				if err := ds.SaveToCSV(file_daily); err != nil {
+					log.Fatal(fmt.Errorf("无法写入文件(daily) %q: %s", file_daily, err))
 				}
 			}
 		} else {
@@ -86,8 +90,8 @@ func actionCrawlDaily(c *cli.Context) error {
 			ch <- r
 			// 中间保存
 			if len(rs)%100 == 0 {
-				if err := rs.SaveToCSV(c.String("residents")); err != nil {
-					log.Fatal(fmt.Errorf("无法写入文件(residents) %q: %s", c.String("residents"), err))
+				if err := rs.SaveToCSV(file_residents); err != nil {
+					log.Fatal(fmt.Errorf("无法写入文件(residents) %q: %s", file_residents, err))
 				}
 			}
 		}
@@ -139,13 +143,13 @@ func actionCrawlDaily(c *cli.Context) error {
 	}
 
 	//	将最终结果写入 JSON
-	if err := ds.SaveToCSV(c.String("daily")); err != nil {
-		return fmt.Errorf("无法写入文件(daily) %q: %s", c.String("daily"), err)
+	if err := ds.SaveToCSV(file_daily); err != nil {
+		return fmt.Errorf("无法写入文件(daily) %q: %s", file_daily, err)
 	}
 
 	rs.Sort()
-	if err := rs.SaveToCSV(c.String("residents")); err != nil {
-		return fmt.Errorf("无法写入文件(resident) %q: %s", c.String("residents"), err)
+	if err := rs.SaveToCSV(file_residents); err != nil {
+		return fmt.Errorf("无法写入文件(resident) %q: %s", file_residents, err)
 	}
 
 	return nil
