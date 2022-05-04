@@ -55,6 +55,14 @@ func actionCrawlDaily(c *cli.Context) error {
 	file_daily := strings.ReplaceAll(c.String("daily"), "{city}", city)
 	file_residents := strings.ReplaceAll(c.String("residents"), "{city}", city)
 
+	var districts []string
+	switch city {
+	case "beijing":
+		districts = crawler.DailyParserBeijing{}.GetDistricts()
+	case "shanghai":
+		districts = crawler.DailyParserShanghai{}.GetDistricts()
+	}
+
 	stats := make(map[time.Time]int, 0)
 	ch := make(chan model.Resident)
 
@@ -75,7 +83,7 @@ func actionCrawlDaily(c *cli.Context) error {
 		if d == nil {
 			ds.Add(cs)
 			if len(ds)%100 == 0 {
-				if err := ds.SaveToCSV(file_daily); err != nil {
+				if err := ds.SaveToCSV(file_daily, districts); err != nil {
 					log.Fatal(fmt.Errorf("无法写入文件(daily) %q: %s", file_daily, err))
 				}
 			}
@@ -129,6 +137,7 @@ func actionCrawlDaily(c *cli.Context) error {
 			d.LocalDeath,
 			d.ImportedDeath,
 			stats[d.Date],
+			// d.LocalConfirmed+d.LocalAsymptomatic-stats[d.Date],
 		)
 		// log.Tracef("actionCrawlDaily(): [%s] \t => 无症状：%d, \t 区域无症状： {%v}",
 		// 	d.Date.Format("2006-01-02"),
@@ -143,7 +152,7 @@ func actionCrawlDaily(c *cli.Context) error {
 	}
 
 	//	将最终结果写入 JSON
-	if err := ds.SaveToCSV(file_daily); err != nil {
+	if err := ds.SaveToCSV(file_daily, districts); err != nil {
 		return fmt.Errorf("无法写入文件(daily) %q: %s", file_daily, err)
 	}
 

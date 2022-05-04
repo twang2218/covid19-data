@@ -73,25 +73,8 @@ type Dailys []Daily
 
 var lockDailys sync.Mutex
 
-func (cs Dailys) SaveToCSV(filename string) error {
-	districts := []string{
-		"浦东新区",
-		"徐汇区",
-		"闵行区",
-		"黄浦区",
-		"嘉定区",
-		"松江区",
-		"虹口区",
-		"长宁区",
-		"青浦区",
-		"静安区",
-		"宝山区",
-		"杨浦区",
-		"普陀区",
-		"崇明区",
-		"金山区",
-		"奉贤区",
-	}
+func (cs Dailys) SaveToCSV(filename string, districts []string) error {
+
 	records := [][]string{}
 	//	Header
 	header := []string{
@@ -257,7 +240,8 @@ func (cs *Dailys) Sort() {
 
 type Resident struct {
 	Date      time.Time // 日期
-	Type      string    // 分型 （确诊病例/无症状感染者）
+	Name      string    // 病例号
+	Type      string    // 分型 （无症状感染者、轻型、普通型、重型、危重型）
 	Gender    string    // 性别
 	Age       float64   // 年龄
 	City      string    // 城市
@@ -276,6 +260,7 @@ func (rs Residents) SaveToCSV(filename string) error {
 	//	Header
 	header := []string{
 		"日期",
+		"病例号",
 		"分型",
 		"性别",
 		"年龄",
@@ -291,6 +276,7 @@ func (rs Residents) SaveToCSV(filename string) error {
 	for _, r := range rs {
 		rec := []string{
 			r.Date.Format("2006-01-02"),
+			r.Name,
 			r.Type,
 			r.Gender,
 			strconv.FormatFloat(r.Age, 'f', 0, 32),
