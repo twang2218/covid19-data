@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"os"
 	"sort"
@@ -217,6 +218,27 @@ func (cs Dailys) SaveToCSV(filename string, districts []string) error {
 	return SaveToCSV(filename, records)
 }
 
+func (cs Dailys) SaveToJSON(filename string) error {
+	f, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	e := json.NewEncoder(f)
+	e.SetIndent("", "  ")
+	return e.Encode(cs)
+}
+
+func (cs *Dailys) LoadFromJSON(filename string) error {
+	f, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	d := json.NewDecoder(f)
+	return d.Decode(&cs)
+}
+
 func (cs Dailys) Find(d time.Time) *Daily {
 	for i, c := range cs {
 		if c.Date.Truncate(24 * time.Hour).Equal(d.Truncate(24 * time.Hour)) {
@@ -227,6 +249,7 @@ func (cs Dailys) Find(d time.Time) *Daily {
 }
 
 func (cs *Dailys) Add(c Daily) {
+	//	TODO: 修改为 buffered channel方式
 	lockDailys.Lock()
 	*cs = append(*cs, c)
 	lockDailys.Unlock()
@@ -290,6 +313,27 @@ func (rs Residents) SaveToCSV(filename string) error {
 	}
 
 	return SaveToCSV(filename, records)
+}
+
+func (rs Residents) SaveToJSON(filename string) error {
+	f, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	e := json.NewEncoder(f)
+	e.SetIndent("", "  ")
+	return e.Encode(rs)
+}
+
+func (rs *Residents) LoadFromJSON(filename string) error {
+	f, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	d := json.NewDecoder(f)
+	return d.Decode(&rs)
 }
 
 // func (rs Residents) Find(d time.Time) *Resident {

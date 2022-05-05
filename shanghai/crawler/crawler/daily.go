@@ -403,13 +403,32 @@ func (c *DailyCrawler) FixDaily(d *model.Daily) error {
 
 func (c *DailyCrawler) FixDailyByResidents(d *model.Daily, rs model.Residents) error {
 	// 可以从居住地信息统计分区数据
-	if len(d.DistrictConfirmed) == 0 {
+	if len(d.DistrictConfirmed) == 0 || len(d.DistrictAsymptomatic) == 0 {
+		// log.Tracef("FixDailyByResidents(): %#v", *d)
 		for _, r := range rs {
-			if r.Date.Equal(d.Date) {
-				if val, ok := d.DistrictConfirmed[r.District]; ok {
-					d.DistrictConfirmed[r.District] = val + 1
+			if r.Date.Equal(d.Date) && len(r.District) > 0 && len(r.Type) > 0 {
+				if r.Type == "无症状感染者" {
+					//	无症状感染者
+					if val, ok := d.DistrictAsymptomatic[r.District]; ok {
+						d.DistrictAsymptomatic[r.District] = val + 1
+					} else {
+						if d.DistrictAsymptomatic == nil {
+							d.DistrictAsymptomatic = make(map[string]int)
+							log.Tracef("FixDailyByResidents() - DistrictAsymptomatic: %#v", *d)
+						}
+						d.DistrictAsymptomatic[r.District] = 1
+					}
 				} else {
-					d.DistrictConfirmed[r.District] = 1
+					//	轻型、普通型、重型、危重型
+					if val, ok := d.DistrictConfirmed[r.District]; ok {
+						d.DistrictConfirmed[r.District] = val + 1
+					} else {
+						if d.DistrictConfirmed == nil {
+							d.DistrictConfirmed = make(map[string]int)
+							log.Tracef("FixDailyByResidents() - DistrictAsymptomatic: %#v", *d)
+						}
+						d.DistrictConfirmed[r.District] = 1
+					}
 				}
 			}
 		}

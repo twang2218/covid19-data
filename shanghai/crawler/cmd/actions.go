@@ -83,7 +83,10 @@ func actionCrawlDaily(c *cli.Context) error {
 		if d == nil {
 			ds.Add(cs)
 			if len(ds)%100 == 0 {
-				if err := ds.SaveToCSV(file_daily, districts); err != nil {
+				if err := ds.SaveToCSV(file_daily+".csv", districts); err != nil {
+					log.Fatal(fmt.Errorf("无法写入文件(daily) %q: %s", file_daily, err))
+				}
+				if err := ds.SaveToJSON(file_daily + ".json"); err != nil {
 					log.Fatal(fmt.Errorf("无法写入文件(daily) %q: %s", file_daily, err))
 				}
 			}
@@ -98,8 +101,11 @@ func actionCrawlDaily(c *cli.Context) error {
 			ch <- r
 			// 中间保存
 			if len(rs)%100 == 0 {
-				if err := rs.SaveToCSV(file_residents); err != nil {
-					log.Fatal(fmt.Errorf("无法写入文件(residents) %q: %s", file_residents, err))
+				if err := rs.SaveToCSV(file_residents + ".csv"); err != nil {
+					log.Fatal(fmt.Errorf("无法写入文件(residents) %q: %s", file_residents+".csv", err))
+				}
+				if err := rs.SaveToJSON(file_residents + ".json"); err != nil {
+					log.Fatal(fmt.Errorf("无法写入文件(residents) %q: %s", file_residents+".json", err))
 				}
 			}
 		}
@@ -151,14 +157,21 @@ func actionCrawlDaily(c *cli.Context) error {
 		// )
 	}
 
-	//	将最终结果写入 JSON
-	if err := ds.SaveToCSV(file_daily, districts); err != nil {
-		return fmt.Errorf("无法写入文件(daily) %q: %s", file_daily, err)
+	//	将最终结果写入文件
+	if err := ds.SaveToCSV(file_daily+".csv", districts); err != nil {
+		return fmt.Errorf("无法写入文件(daily) %q: %s", file_daily+".csv", err)
+	}
+
+	if err := ds.SaveToJSON(file_daily + ".json"); err != nil {
+		return fmt.Errorf("无法写入文件(daily) %q: %s", file_daily+".json", err)
 	}
 
 	rs.Sort()
-	if err := rs.SaveToCSV(file_residents); err != nil {
-		return fmt.Errorf("无法写入文件(resident) %q: %s", file_residents, err)
+	if err := rs.SaveToCSV(file_residents + ".csv"); err != nil {
+		return fmt.Errorf("无法写入文件(resident) %q: %s", file_residents+".csv", err)
+	}
+	if err := rs.SaveToJSON(file_residents + ".json"); err != nil {
+		return fmt.Errorf("无法写入文件(resident) %q: %s", file_residents+".json", err)
 	}
 
 	return nil

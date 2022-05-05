@@ -15,8 +15,8 @@ import (
 
 const (
 	DEFAULT_CITY           = "shanghai"
-	DEFAULT_FILE_DAILY     = "../data/{city}-daily.csv"
-	DEFAULT_FILE_RESIDENTS = "../data/{city}-daily-residents.csv"
+	DEFAULT_FILE_DAILY     = "../data/{city}-daily"
+	DEFAULT_FILE_RESIDENTS = "../data/{city}-daily-residents"
 	DEFAULT_FILE_LOG       = "../data/crawler.log"
 )
 

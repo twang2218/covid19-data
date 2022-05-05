@@ -40,9 +40,20 @@ video-beijing:
 test:
 	go test -v ./...
 
-clean:
+clean-geo-cache:
+	rm -rf ../data/.geo_cache
+
+clean-web-cache:
+	rm -rf ../data/.web_cache
+
+clean-figure:
+	rm -rf ../data/fig_map_sequences/*
+	rm -rf ../analysis/*.{png,gif,mp4}
+
+clean-data:
+	rm -rf ../data/*.{csv,json}
+
+clean: clean-web-cache clean-figure clean-data
 	go clean
 	rm -f ./daily-crawler
-	rm -rf ../data/.web_cache
-	rm -rf ../data/fig_map_sequences/*
 
