@@ -8,7 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
+	"github.com/pmezard/go-difflib/difflib"
 	log "github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 	"github.com/urfave/cli/v2"
 )
 
@@ -44,16 +47,105 @@ func consume(gc *geocoder.Geocoder, rs *model.Residents, stats *map[time.Time]in
 			(*stats)[r.Date] = 1
 		}
 	}
+
 	fmt.Println()
+}
+
+var spewConfig = spew.ConfigState{
+	Indent:                  "  ",
+	DisablePointerAddresses: true,
+	DisableCapacities:       true,
+	SortKeys:                true,
+	DisableMethods:          true,
+	MaxDepth:                10,
+}
+
+func diff[T any](old, fresh T) string {
+	o := spewConfig.Sdump(old)
+	f := spewConfig.Sdump(fresh)
+	diff, err := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
+		A:        difflib.SplitLines(o),
+		B:        difflib.SplitLines(f),
+		FromFile: "旧数据",
+		FromDate: "",
+		ToFile:   "新抓取",
+		ToDate:   "",
+		Context:  0,
+	})
+	if err != nil {
+		log.Warnf("diff(): 出错：%s", err)
+	}
+	return diff
+}
+
+func updateDailys(old, fresh model.Dailys) model.Dailys {
+	//	将新数据添加到旧的表中
+	for _, fd := range fresh {
+		found := false
+		for _, od := range old {
+			if od.Date.Equal(fd.Date) {
+				// 存在一样的数据，则比对一致性
+				if !assert.ObjectsAreEqualValues(od, fd) {
+					//	同样的天，数据却不同
+					log.Warnf("[%s] 数据不一致：\n%s", od.Date.Format("2006-01-02"), diff(od, fd))
+				}
+				found = true
+				break
+			}
+		}
+		//	这是新的数据，添加到旧表中
+		if !found {
+			old = append(old, fd)
+		}
+	}
+	//	整理数据
+	old.Sort()
+
+	return old
+}
+
+func updateResidents(old, fresh model.Residents) model.Residents {
+	//	将新数据添加到旧的表中
+	for _, fd := range fresh {
+		found := false
+		for _, od := range old {
+			if od.Date.Equal(fd.Date) && od.Name == fd.Name && od.District == fd.District && od.Address == fd.Address {
+				// 存在一样的数据，则比对一致性
+				if !assert.ObjectsAreEqualValues(od, fd) {
+					//	同样的天，数据却不同
+					log.Warnf("[%s - %s] 数据不一致：\n%s", od.Date.Format("2006-01-02"), od.Name, diff(od, fd))
+				}
+				found = true
+				break
+			}
+		}
+		//	这是新的数据，添加到旧表中
+		if !found {
+			old = append(old, fd)
+		}
+	}
+	//	整理数据
+	old.Sort()
+
+	return old
 }
 
 func actionCrawlDaily(c *cli.Context) error {
 	var ds model.Dailys
 	var rs model.Residents
+	var ds_old model.Dailys
+	var rs_old model.Residents
 
 	city := c.String("city")
 	file_daily := strings.ReplaceAll(c.String("daily"), "{city}", city)
+	file_daily_csv := file_daily + ".csv"
+	file_daily_json := file_daily + ".json"
 	file_residents := strings.ReplaceAll(c.String("residents"), "{city}", city)
+	file_residents_csv := file_residents + ".csv"
+	file_residents_json := file_residents + ".json"
+
+	ds_old.LoadFromJSON(file_daily_json)
+	rs_old.LoadFromJSON(file_residents_json)
 
 	var districts []string
 	switch city {
@@ -82,12 +174,13 @@ func actionCrawlDaily(c *cli.Context) error {
 		d := ds.Find(cs.Date)
 		if d == nil {
 			ds.Add(cs)
-			if len(ds)%100 == 0 {
-				if err := ds.SaveToCSV(file_daily+".csv", districts); err != nil {
-					log.Fatal(fmt.Errorf("无法写入文件(daily) %q: %s", file_daily, err))
-				}
-				if err := ds.SaveToJSON(file_daily + ".json"); err != nil {
-					log.Fatal(fmt.Errorf("无法写入文件(daily) %q: %s", file_daily, err))
+			if len(ds_old) == 0 {
+				//	只在第一次下载数据文件的时候才进行数据暂存。
+				//	因为只有第一次下载出错几率最高，而且不完整下载不应该覆盖历史数据。
+				if len(ds)%100 == 0 {
+					if err := ds.SaveToJSON(file_daily_json); err != nil {
+						log.Fatal(fmt.Errorf("无法写入文件(daily) %q: %s", file_daily, err))
+					}
 				}
 			}
 		} else {
@@ -100,12 +193,13 @@ func actionCrawlDaily(c *cli.Context) error {
 			// 送给数据处理通道
 			ch <- r
 			// 中间保存
-			if len(rs)%100 == 0 {
-				if err := rs.SaveToCSV(file_residents + ".csv"); err != nil {
-					log.Fatal(fmt.Errorf("无法写入文件(residents) %q: %s", file_residents+".csv", err))
-				}
-				if err := rs.SaveToJSON(file_residents + ".json"); err != nil {
-					log.Fatal(fmt.Errorf("无法写入文件(residents) %q: %s", file_residents+".json", err))
+			if len(rs_old) == 0 {
+				//	只在第一次下载数据文件的时候才进行数据暂存。
+				//	因为只有第一次下载出错几率最高，而且不完整下载不应该覆盖历史数据。
+				if len(rs)%100 == 0 {
+					if err := rs.SaveToJSON(file_residents_json); err != nil {
+						log.Fatal(fmt.Errorf("无法写入文件(residents) %q: %s", file_residents_json, err))
+					}
 				}
 			}
 		}
@@ -157,21 +251,25 @@ func actionCrawlDaily(c *cli.Context) error {
 		// )
 	}
 
+	//	用新的数据更新旧的，以增加新的数据，但是要检查旧数据是否有所改动
+	ds = updateDailys(ds_old, ds)
+	rs = updateResidents(rs_old, rs)
+
 	//	将最终结果写入文件
-	if err := ds.SaveToCSV(file_daily+".csv", districts); err != nil {
-		return fmt.Errorf("无法写入文件(daily) %q: %s", file_daily+".csv", err)
+	if err := ds.SaveToCSV(file_daily_csv, districts); err != nil {
+		return fmt.Errorf("无法写入文件(daily) %q: %s", file_daily_csv, err)
 	}
 
-	if err := ds.SaveToJSON(file_daily + ".json"); err != nil {
-		return fmt.Errorf("无法写入文件(daily) %q: %s", file_daily+".json", err)
+	if err := ds.SaveToJSON(file_daily_json); err != nil {
+		return fmt.Errorf("无法写入文件(daily) %q: %s", file_daily_json, err)
 	}
 
 	rs.Sort()
-	if err := rs.SaveToCSV(file_residents + ".csv"); err != nil {
-		return fmt.Errorf("无法写入文件(resident) %q: %s", file_residents+".csv", err)
+	if err := rs.SaveToCSV(file_residents_csv); err != nil {
+		return fmt.Errorf("无法写入文件(resident) %q: %s", file_residents_csv, err)
 	}
-	if err := rs.SaveToJSON(file_residents + ".json"); err != nil {
-		return fmt.Errorf("无法写入文件(resident) %q: %s", file_residents+".json", err)
+	if err := rs.SaveToJSON(file_residents_json); err != nil {
+		return fmt.Errorf("无法写入文件(resident) %q: %s", file_residents_json, err)
 	}
 
 	return nil
