@@ -1,13 +1,8 @@
 
 # 新冠疫情数据
 
-## 上海疫情数据
 
-![](shanghai/analysis/fig_daily_overall_analysis.png)
-![](shanghai/analysis/fig_daily_district_overall.png)
-![](shanghai/analysis/fig_daily_district_community.png)
-
-### 爬虫
+## 爬虫
 
 爬虫使用 Go 撰写，数据来源自上海卫健委官方网站 [https://wsjkw.sh.gov.cn/xwfb/index.html]，以及上海官方公众号**上海发布**。爬虫的使用可以参考 [Makefile](shanghai/crawler/Makefile)。
 
@@ -21,3 +16,16 @@ KEY_TIANDITU=yyy
 KEY_BAIDU_MAP=zzz
 
 ```
+
+## 上海疫情数据
+
+![](analysis/figures/shanghai/daily_overall_analysis.png)
+![](analysis/figures/shanghai/daily_district_positive.png)
+![](analysis/figures/shanghai/daily_district_community.png)
+![](analysis/figures/shanghai/qgis_covid_map.gif)
+
+## 北京疫情数据
+
+![](analysis/figures/beijing/daily_type_analysis.png)
+![](analysis/figures/beijing/daily_district_positive.png)
+![](analysis/figures/beijing/qgis_covid_map.gif)
