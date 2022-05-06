@@ -70,6 +70,10 @@ type Daily struct {
 	Source string // 来源
 }
 
+func (d Daily) Key() string {
+	return d.Date.Format("2006-01-02")
+}
+
 type Dailys []Daily
 
 var lockDailys sync.Mutex
@@ -272,6 +276,10 @@ type Resident struct {
 	Address   string    // 居住地
 	Longitude float64   // 经度
 	Latitude  float64   // 纬度
+}
+
+func (r Resident) Key() string {
+	return fmt.Sprintf("%s.%s", r.Date.Format("2006-01-02"), r.Name)
 }
 
 type Residents []Resident

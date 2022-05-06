@@ -78,54 +78,36 @@ func diff[T any](old, fresh T) string {
 	return diff
 }
 
-func updateDailys(old, fresh model.Dailys) model.Dailys {
-	//	将新数据添加到旧的表中
-	for _, fd := range fresh {
-		found := false
-		for _, od := range old {
-			if od.Date.Equal(fd.Date) {
-				// 存在一样的数据，则比对一致性
-				if !assert.ObjectsAreEqualValues(od, fd) {
-					//	同样的天，数据却不同
-					log.Warnf("[%s] 数据不一致：\n%s", od.Date.Format("2006-01-02"), diff(od, fd))
-				}
-				found = true
-				break
-			}
-		}
-		//	这是新的数据，添加到旧表中
-		if !found {
-			old = append(old, fd)
-		}
-	}
-	//	整理数据
-	old.Sort()
-
-	return old
+type Keyer interface {
+	Key() string
 }
 
-func updateResidents(old, fresh model.Residents) model.Residents {
+func update[T Keyer](old, fresh []T) []T {
+	//	对旧表建立索引
+	old_index := make(map[string]T, len(old))
+	for _, od := range old {
+		old_index[od.Key()] = od
+	}
 	//	将新数据添加到旧的表中
-	for _, fd := range fresh {
+	for i, fd := range fresh {
+		if i%1000 == 0 {
+			fmt.Print(".")
+		}
 		found := false
-		for _, od := range old {
-			if od.Date.Equal(fd.Date) && od.Name == fd.Name && od.District == fd.District && od.Address == fd.Address {
-				// 存在一样的数据，则比对一致性
-				if !assert.ObjectsAreEqualValues(od, fd) {
-					//	同样的天，数据却不同
-					log.Warnf("[%s - %s] 数据不一致：\n%s", od.Date.Format("2006-01-02"), od.Name, diff(od, fd))
-				}
-				found = true
-				break
+		if od, ok := old_index[fd.Key()]; ok {
+			// 存在一样的数据，则比对一致性
+			if !assert.ObjectsAreEqualValues(od, fd) {
+				//	同样的Key，数据却不同
+				log.Warnf("[%s] 数据不一致：\n%s", od.Key(), diff(od, fd))
 			}
+			found = true
 		}
 		//	这是新的数据，添加到旧表中
 		if !found {
 			old = append(old, fd)
+			log.Infof("添加新的数据：[%s] => %+v", fd.Key(), fd)
 		}
 	}
-	//	整理数据
-	old.Sort()
 
 	return old
 }
@@ -252,10 +234,11 @@ func actionCrawlDaily(c *cli.Context) error {
 	}
 
 	//	用新的数据更新旧的，以增加新的数据，但是要检查旧数据是否有所改动
-	ds = updateDailys(ds_old, ds)
-	rs = updateResidents(rs_old, rs)
+	ds = update(ds_old, ds)
+	rs = update(rs_old, rs)
 
 	//	将最终结果写入文件
+	ds.Sort()
 	if err := ds.SaveToCSV(file_daily_csv, districts); err != nil {
 		return fmt.Errorf("无法写入文件(daily) %q: %s", file_daily_csv, err)
 	}
