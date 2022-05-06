@@ -30,6 +30,7 @@ func (p DailyParserShanghai) GetSelector(t string) string {
 
 func (p DailyParserShanghai) GetItemLinks() []string {
 	return []string{
+		"https://mp.weixin.qq.com/s/Sq1YN8oMu0RCSddtFnN3tg", // 5月5日 疫情通报
 		// "https://mp.weixin.qq.com/s/xps19UKtpgZUEPhfj1GC9Q", // 5月4日 疫情通报
 		// "https://mp.weixin.qq.com/s/KyTRqsRBWbM5cEa2sk2wbg", // 5月3日 居住地信息
 		// "https://mp.weixin.qq.com/s/BNp0FTEIV33VRghIpWaXwg", // 5月3日 疫情通报
