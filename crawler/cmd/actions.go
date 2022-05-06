@@ -108,6 +108,7 @@ func update[T Keyer](old, fresh []T) []T {
 			log.Infof("添加新的数据：[%s] => %+v", fd.Key(), fd)
 		}
 	}
+	fmt.Println()
 
 	return old
 }

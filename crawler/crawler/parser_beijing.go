@@ -670,7 +670,7 @@ func (p DailyParserBeijing) parseDailyContentRegionItem(d *model.Daily, text str
 
 var (
 	reResidentDistrictBeijingSection = regexp.MustCompile(`(?:确诊病例|[无症状]*感染者)(?P<num_list>[\d\s、至]*)：[^\n]+`)
-	reResidentDistrictBeijing1       = regexp.MustCompile(`(?:确诊病例|[无症状]*感染者)(?P<num_list>[\d\s、至]*)[：]?[^\n]*[现住址均位于进入地点为]+(?P<district>[^区\n]+区)(?P<address>[^，。 \n]*)[^\n]*(?:(?P<date>\d+\s*月\d+\s*日|当日)均?诊断为(?P<type>确诊病例|无症状感染者))(?:[，]临床分型[均分别]*为(?P<level>(?:[^型，\n]+型)+))?`)
+	reResidentDistrictBeijing1       = regexp.MustCompile(`(?:确诊病例|[无症状]*感染者)(?P<num_list>[\d\s、至]*)[：]?[^\n]*[现住址均位于进入地点为]+(?P<district>[^区\n]+区)(?P<address>[^，。 \n]*)[^\n]*(?:(?P<date>\d+\s*月\d+\s*日|当日)均?诊断均?为(?P<type>确诊病例|无症状感染者))(?:[，]临床分型[均分别]*为(?P<level>(?:[^型，\n]+型)+))?`)
 	reResidentDistrictBeijing1Level  = regexp.MustCompile(`(?P<date>\d+月\d+日)?(?:确诊病例|[无症状]*感染者)(?P<num_list>[\d\s、至]+)(?:诊断为确诊病例，)?临床分型均?为(?P<level>[^型]+型)`)
 )
 
@@ -754,7 +754,7 @@ func (p DailyParserBeijing) ParseResidents(rs *model.Residents, date time.Time, 
 			for i, n := range num_list {
 				r := model.Resident{
 					Date:     d,
-					Name:     fmt.Sprintf("%s%d", ts[i], n),
+					Name:     fmt.Sprintf("%s%d", m2[5], n),
 					Type:     ts[i],
 					City:     "北京市",
 					District: strings.TrimSpace(m2[2]),

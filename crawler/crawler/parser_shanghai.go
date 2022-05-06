@@ -30,7 +30,7 @@ func (p DailyParserShanghai) GetSelector(t string) string {
 
 func (p DailyParserShanghai) GetItemLinks() []string {
 	return []string{
-		"https://mp.weixin.qq.com/s/Sq1YN8oMu0RCSddtFnN3tg", // 5月5日 疫情通报
+		// "https://mp.weixin.qq.com/s/Sq1YN8oMu0RCSddtFnN3tg", // 5月5日 疫情通报
 		// "https://mp.weixin.qq.com/s/xps19UKtpgZUEPhfj1GC9Q", // 5月4日 疫情通报
 		// "https://mp.weixin.qq.com/s/KyTRqsRBWbM5cEa2sk2wbg", // 5月3日 居住地信息
 		// "https://mp.weixin.qq.com/s/BNp0FTEIV33VRghIpWaXwg", // 5月3日 疫情通报
@@ -732,6 +732,7 @@ func (p DailyParserShanghai) ParseResidents(rs *model.Residents, date time.Time,
 
 				r := model.Resident{
 					Date:     date,
+					Name:     fmt.Sprintf("%s%s", m[1], m[2]),
 					Type:     t,
 					Gender:   strings.TrimSpace(m[3]),
 					Age:      age,
@@ -766,6 +767,7 @@ func (p DailyParserShanghai) ParseResidents(rs *model.Residents, date time.Time,
 				if len(addr) > 0 {
 					r := model.Resident{
 						Date:     date,
+						Name:     fmt.Sprintf("%s%s", d, addr),
 						City:     "上海市",
 						District: d,
 						Address:  addr,
