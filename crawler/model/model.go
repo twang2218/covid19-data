@@ -15,6 +15,7 @@ import (
 type Daily struct {
 	Date time.Time // 日期
 	//	总共
+	Positive                         int // 阳性感染者
 	Confirmed                        int // 确诊病例
 	Asymptomatic                     int // 无症状感染者
 	Mild                             int // 轻型
@@ -28,8 +29,11 @@ type Daily struct {
 	UnderMedicalObservation          int // 尚在医学观察
 
 	//	本土
+	LocalPositive                         int // 本土阳性感染者
 	LocalConfirmed                        int // 本土确诊病例
 	LocalAsymptomatic                     int // 本土无症状感染者
+	LocalPositiveFromBubble               int // 从闭环隔离中发现的阳性感染者
+	LocalPositiveFromRisk                 int // 从风险人群中发现的阳性感染者
 	LocalConfirmedFromAsymptomatic        int // 从无症状感染者转归确诊的病例
 	LocalConfirmedFromBubble              int // 从闭环隔离中发现的本土病例
 	LocalConfirmedFromRisk                int // 从风险人群中发现的本土病例
@@ -42,6 +46,7 @@ type Daily struct {
 	LocalUnderMedicalObservation          int // 本土尚在医学观察
 
 	//	境外输入
+	ImportedPositive                         int // 境外输入阳性感染者
 	ImportedConfirmed                        int // 境外输入病例
 	ImportedAsymptomatic                     int // 境外输入无症状感染者
 	ImportedInHospital                       int // 境外输入在院治疗
@@ -51,6 +56,7 @@ type Daily struct {
 	ImportedUnderMedicalObservation          int // 境外输入尚在医学观察
 
 	//	累计
+	TotalLocalPositive                  int // 累计本土阳性感染者
 	TotalLocalConfirmed                 int // 累计本土确诊
 	TotalLocalDischargedFromHospital    int // 累计本土治愈出院
 	TotalLocalDeath                     int // 累计本土死亡
@@ -58,6 +64,9 @@ type Daily struct {
 	TotalImportedDischargedFromHospital int // 累计境外输入治愈出院
 
 	//	分区
+	DistrictPositive                  map[string]int // 城区阳性感染者
+	DistrictPositiveFromBubble        map[string]int // 城区从闭环隔离中发现阳性感染者
+	DistrictPositiveFromRisk          map[string]int // 城区从风险人群中发现阳性感染者
 	DistrictConfirmed                 map[string]int // 城区确诊病例
 	DistrictConfirmedFromBubble       map[string]int // 城区从闭环隔离中发现确诊病例
 	DistrictConfirmedFromRisk         map[string]int // 城区从风险人群中发现确诊病例
@@ -85,6 +94,7 @@ func (cs Dailys) SaveToCSV(filename string, districts []string) error {
 	header := []string{
 		"日期",
 		//	总体
+		"阳性感染者",
 		"确诊病例",
 		"无症状感染者",
 		"轻型",
@@ -97,8 +107,11 @@ func (cs Dailys) SaveToCSV(filename string, districts []string) error {
 		"解除医学观察",
 		"尚在医学观察",
 		//	本土
+		"本土阳性感染者",
 		"本土确诊病例",
 		"本土无症状感染者",
+		"从闭环隔离中发现的阳性感染者",
+		"从风险人群中发现的阳性感染者",
 		"从无症状感染者转归确诊的病例",
 		"从闭环隔离中发现的本土病例",
 		"从风险人群中发现的本土病例",
@@ -110,6 +123,7 @@ func (cs Dailys) SaveToCSV(filename string, districts []string) error {
 		"本土死亡病例",
 		"本土尚在医学观察",
 		//	境外输入
+		"境外输入阳性感染者",
 		"境外输入病例",
 		"境外输入无症状感染者",
 		"境外输入在院治疗",
@@ -118,6 +132,7 @@ func (cs Dailys) SaveToCSV(filename string, districts []string) error {
 		"境外输入死亡",
 		"境外输入尚在医学观察",
 		//	累计
+		"累计本土阳性感染者",
 		"累计本土确诊",
 		"累计治愈出院",
 		"累计本土死亡",
@@ -125,6 +140,15 @@ func (cs Dailys) SaveToCSV(filename string, districts []string) error {
 		"累计境外输入治愈出院",
 	}
 	//	分区
+	for _, d := range districts {
+		header = append(header, fmt.Sprintf("%s_阳性", d))
+	}
+	for _, d := range districts {
+		header = append(header, fmt.Sprintf("%s_阳性_来自闭环隔离", d))
+	}
+	for _, d := range districts {
+		header = append(header, fmt.Sprintf("%s_阳性_来自风险人群", d))
+	}
 	for _, d := range districts {
 		header = append(header, fmt.Sprintf("%s_确诊", d))
 	}
@@ -166,6 +190,7 @@ func (cs Dailys) SaveToCSV(filename string, districts []string) error {
 		r := []string{
 			c.Date.Format("2006-01-02"),
 			//	总共
+			strconv.Itoa(c.Positive),
 			strconv.Itoa(c.Confirmed),
 			strconv.Itoa(c.Asymptomatic),
 			strconv.Itoa(c.Mild),
@@ -178,8 +203,11 @@ func (cs Dailys) SaveToCSV(filename string, districts []string) error {
 			strconv.Itoa(c.DischargedFromMedicalObservation),
 			strconv.Itoa(c.UnderMedicalObservation),
 			//	本土
+			strconv.Itoa(c.LocalPositive),
 			strconv.Itoa(c.LocalConfirmed),
 			strconv.Itoa(c.LocalAsymptomatic),
+			strconv.Itoa(c.LocalPositiveFromBubble),
+			strconv.Itoa(c.LocalPositiveFromRisk),
 			strconv.Itoa(c.LocalConfirmedFromAsymptomatic),
 			strconv.Itoa(c.LocalConfirmedFromBubble),
 			strconv.Itoa(c.LocalConfirmedFromRisk),
@@ -191,6 +219,7 @@ func (cs Dailys) SaveToCSV(filename string, districts []string) error {
 			strconv.Itoa(c.LocalDeath),
 			strconv.Itoa(c.LocalUnderMedicalObservation),
 			//	境外输入
+			strconv.Itoa(c.ImportedPositive),
 			strconv.Itoa(c.ImportedConfirmed),
 			strconv.Itoa(c.ImportedAsymptomatic),
 			strconv.Itoa(c.ImportedInHospital),
@@ -199,6 +228,7 @@ func (cs Dailys) SaveToCSV(filename string, districts []string) error {
 			strconv.Itoa(c.ImportedDeath),
 			strconv.Itoa(c.ImportedUnderMedicalObservation),
 			//	累计
+			strconv.Itoa(c.TotalLocalPositive),
 			strconv.Itoa(c.TotalLocalConfirmed),
 			strconv.Itoa(c.TotalLocalDischargedFromHospital),
 			strconv.Itoa(c.TotalLocalDeath),
@@ -206,6 +236,9 @@ func (cs Dailys) SaveToCSV(filename string, districts []string) error {
 			strconv.Itoa(c.TotalImportedDischargedFromHospital),
 		}
 		//	分区
+		r = appendByDistricts(r, districts, c.DistrictPositive)
+		r = appendByDistricts(r, districts, c.DistrictPositiveFromBubble)
+		r = appendByDistricts(r, districts, c.DistrictPositiveFromRisk)
 		r = appendByDistricts(r, districts, c.DistrictConfirmed)
 		r = appendByDistricts(r, districts, c.DistrictConfirmedFromBubble)
 		r = appendByDistricts(r, districts, c.DistrictConfirmedFromAsymptomatic)

@@ -321,6 +321,76 @@ func (c *DailyCrawler) FixDaily(d *model.Daily) error {
 		}
 	}
 
+	//	阳性感染者
+	if d.LocalPositive == 0 {
+		if d.LocalConfirmed != 0 || d.LocalAsymptomatic != 0 {
+			d.LocalPositive = d.LocalConfirmed + d.LocalAsymptomatic
+		}
+	} else {
+		if d.LocalPositive != (d.LocalConfirmed + d.LocalAsymptomatic) {
+			log.Warnf("[%s] 本土阳性感染者数据不匹配：本土阳性:%d (确诊:%d / 无症状:%d)", d.Date.Format("2006-01-02"), d.LocalPositive, d.LocalConfirmed, d.LocalAsymptomatic)
+		}
+	}
+	if d.ImportedPositive == 0 {
+		if d.ImportedConfirmed != 0 || d.ImportedAsymptomatic != 0 {
+			d.ImportedPositive = d.ImportedConfirmed + d.ImportedAsymptomatic
+		}
+	} else {
+		if d.ImportedPositive != (d.ImportedConfirmed + d.ImportedAsymptomatic) {
+			log.Warnf("[%s] 境外输入阳性感染者数据不匹配：境外输入阳性:%d (确诊:%d / 无症状:%d)", d.Date.Format("2006-01-02"), d.ImportedPositive, d.ImportedConfirmed, d.ImportedAsymptomatic)
+		}
+	}
+
+	if d.Positive == 0 {
+		if d.Confirmed != 0 || d.Asymptomatic != 0 {
+			d.Positive = d.Confirmed + d.Asymptomatic
+		}
+	} else {
+		if d.Positive != (d.Confirmed + d.Asymptomatic) {
+			log.Warnf("[%s] 阳性感染者数据不匹配：总共:%d (确诊:%d / 无症状:%d)", d.Date.Format("2006-01-02"), d.Positive, d.Confirmed, d.Asymptomatic)
+		}
+	}
+	if d.LocalPositiveFromBubble != 0 {
+		//	检查分区数量
+		c := 0
+		for _, v := range d.DistrictPositiveFromBubble {
+			c += v
+		}
+		if d.LocalPositiveFromBubble != c {
+			log.Warnf("[%s] 阳性感染者(来自隔离管控)数据不匹配：总共:%d (%d) (分区: %v)", d.Date.Format("2006-01-02"), d.LocalPositiveFromBubble, c, d.DistrictPositiveFromBubble)
+		}
+	}
+	if d.LocalPositiveFromRisk == 0 {
+		if d.LocalPositiveFromBubble > 0 {
+			d.LocalPositiveFromRisk = d.LocalPositive - d.LocalPositiveFromBubble
+			if d.LocalPositiveFromRisk < 0 {
+				log.Warnf("[%s] 阳性感染者(来自风险人群)数据不合理：本土阳性感染者: %d => 来自隔离管控: %d + 来自风险人群: %d", d.Date.Format("2006-01-02"), d.LocalPositive, d.LocalPositiveFromBubble, d.LocalPositiveFromRisk)
+			}
+		}
+	} else {
+		//	检查分区数量
+		r := 0
+		for _, v := range d.DistrictPositiveFromRisk {
+			r += v
+		}
+		if d.LocalPositiveFromRisk != r {
+			log.Warnf("[%s] 阳性感染者(来自风险人群)数据不匹配：总共:%d (分区: %v)", d.Date.Format("2006-01-02"), d.LocalPositiveFromRisk, d.DistrictPositiveFromRisk)
+		}
+	}
+	if d.DistrictPositive == nil {
+		d.DistrictPositive = make(map[string]int)
+		for r, v := range d.DistrictPositiveFromBubble {
+			d.DistrictPositive[r] = v
+		}
+		for r, v := range d.DistrictPositiveFromRisk {
+			if val, ok := d.DistrictPositive[r]; ok {
+				d.DistrictPositive[r] = val + v
+			} else {
+				d.DistrictPositive[r] = v
+			}
+		}
+	}
+
 	// 治愈出院
 	if d.DischargedFromHospital == 0 {
 		if d.LocalDischargedFromHospital != 0 || d.ImportedDischargedFromHospital != 0 {
