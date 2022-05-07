@@ -9,11 +9,16 @@ run:
 run-no-cache:
 	go run ./cmd -v daily --no-cache
 
-shanghai:
+data: data-shanghai data-beijing
+
+data-shanghai:
 	go run ./cmd -v daily --city=shanghai
 
-beijing:
+data-beijing:
 	go run ./cmd -v daily --city=beijing
+
+data-backup:
+	tar -cJvf ../data/backup-`date  +%Y%m%d_%H%M`.tar.xz ../data/{beijing,shanghai}-{daily,residents}.json
 
 video: video-shanghai video-beijing
 
