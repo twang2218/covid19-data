@@ -60,15 +60,15 @@ var spewConfig = spew.ConfigState{
 	MaxDepth:                10,
 }
 
-func diff[T any](old, fresh T) string {
+func diff[T Keyer](old, fresh T) string {
 	o := spewConfig.Sdump(old)
 	f := spewConfig.Sdump(fresh)
 	diff, err := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
 		A:        difflib.SplitLines(o),
 		B:        difflib.SplitLines(f),
-		FromFile: "旧数据",
+		FromFile: fmt.Sprintf("旧数据 (%s)", old.Key()),
 		FromDate: "",
-		ToFile:   "新抓取",
+		ToFile:   fmt.Sprintf("新抓取 (%s)", fresh.Key()),
 		ToDate:   "",
 		Context:  0,
 	})
@@ -82,7 +82,7 @@ type Keyer interface {
 	Key() string
 }
 
-func update[T Keyer](old, fresh []T) []T {
+func update[T Keyer](old, fresh []T, show_addition bool) []T {
 	//	对旧表建立索引
 	old_index := make(map[string]T, len(old))
 	for _, od := range old {
@@ -105,7 +105,9 @@ func update[T Keyer](old, fresh []T) []T {
 		//	这是新的数据，添加到旧表中
 		if !found {
 			old = append(old, fd)
-			log.Infof("添加新的数据：[%s] => %+v", fd.Key(), fd)
+			if show_addition {
+				log.Infof("添加新的数据：[%s] => %+v", fd.Key(), fd)
+			}
 		}
 	}
 	fmt.Println()
@@ -235,8 +237,8 @@ func actionCrawlDaily(c *cli.Context) error {
 	}
 
 	//	用新的数据更新旧的，以增加新的数据，但是要检查旧数据是否有所改动
-	ds = update(ds_old, ds)
-	rs = update(rs_old, rs)
+	ds = update(ds_old, ds, true)
+	rs = update(rs_old, rs, false)
 
 	//	将最终结果写入文件
 	ds.Sort()
