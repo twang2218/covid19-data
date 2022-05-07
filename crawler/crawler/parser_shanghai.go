@@ -30,6 +30,7 @@ func (p DailyParserShanghai) GetSelector(t string) string {
 
 func (p DailyParserShanghai) GetItemLinks() []string {
 	return []string{
+		"https://mp.weixin.qq.com/s/bqZp2AqqE-FPzJpx6FlhPA", // 5月7日 居住地信息
 		// "https://mp.weixin.qq.com/s/Sq1YN8oMu0RCSddtFnN3tg", // 5月5日 疫情通报
 		// "https://mp.weixin.qq.com/s/xps19UKtpgZUEPhfj1GC9Q", // 5月4日 疫情通报
 		// "https://mp.weixin.qq.com/s/KyTRqsRBWbM5cEa2sk2wbg", // 5月3日 居住地信息
@@ -38,6 +39,8 @@ func (p DailyParserShanghai) GetItemLinks() []string {
 		// "https://mp.weixin.qq.com/s/6Zk1yLrGojy_5bU4oS9ZTA", // 5月2日 疫情通报
 		// "https://mp.weixin.qq.com/s/agdZHOqVZh9atNHOQEFTog", // 5月1日 居住地信息
 		// "https://mp.weixin.qq.com/s/C8CaP7iR8Bi1HizU9NnjDw", // 4月13日 疫情通报
+		"https://mp.weixin.qq.com/s/OZGM-pNkefZqWr0IFRJj1g", // 4月12日 居住地信息
+		"https://mp.weixin.qq.com/s/SQoQiurUqYMz6xOvuBdVWw", // 4月12日 疫情通报
 		"https://mp.weixin.qq.com/s/vxFiV2HeSvByINUlTmFKZA", // 4月11日 居住地信息
 		"https://mp.weixin.qq.com/s/eun72mybh5Uy0k2m88ae_Q", // 4月11日 疫情通报
 		"https://mp.weixin.qq.com/s/u0XfHF8dgfEp8vGjRtcwXA", // 4月10日 居住地信息
