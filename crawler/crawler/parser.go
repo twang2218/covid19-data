@@ -24,7 +24,7 @@ type DailyParser interface {
 
 var (
 	reDailyDate                 = regexp.MustCompile(`(?:^|[：】海京]+)(?P<date>(?:\d+年)?\d+月\d+日)(?:[，（]+|0—24时|0时至24时|新增|[^，\n]+新增)`)
-	reDailyLocalConfirmed       = regexp.MustCompile(`(?:[^累计\n]+本土[新冠肺炎]*确诊病例|新增)(?P<number>\d+)(?:例|例本土[新冠肺炎]*确诊[病例]*)(?:[、，。（ ]|$)`)
+	reDailyLocalConfirmed       = regexp.MustCompile(`(?:[^累计\n]+本土[新冠肺炎]*确诊病例|新增)(?P<number>\d+)(?:例|例本土[新冠肺炎]*确诊[病例]*)(?:[和、，。（ ]|$)`)
 	reDailyLocalAsymptomatic    = regexp.MustCompile(`(?:新增|[\s，、和])(?:[本土]*无症状感染者)?(?P<number>\d+)(?:例|例[本土]*无症状感染者)(?:[、，。（ 和]|$)`)
 	reDailyImportedConfirmed    = regexp.MustCompile(`境外输入(?:性新冠肺炎确诊)?(?:病例)?(?P<number>\d+)例`)
 	reDailyImportedAsymptomatic = regexp.MustCompile(`(?:[新增]*境外输入性?无症状感染者|和)(?P<number>\d+)例(?:境外输入无症状感染者)?`)

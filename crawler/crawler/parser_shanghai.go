@@ -13,12 +13,21 @@ import (
 
 type DailyParserShanghai struct{}
 
+//	小标题
+//		section > span > strong:		margin-bottom: 0em;
+//		section [data-brushtype] > span > strong
+//	内容
+//		section > p > span:				color: rgb(0, 0, 0);letter-spacing: normal;font-size: 16px;
+//  	section > span:					letter-spacing: normal;color: rgb(0, 0, 0);font-size: 16px;
+//		section > span [>strong]: 		letter-spacing: normal;color: rgb(0, 0, 0);font-size: 16px;
+
 func (p DailyParserShanghai) GetSelector(t string) string {
 	selectors := map[string]string{
-		"index":   ".list-date a, .result a",
-		"item":    ".Article, #page-content",
-		"title":   "#ivs_title, .rich_media_title",
-		"content": "#ivs_content p, section > strong, section > span > strong, section > p",
+		"index": ".list-date a, .result a",
+		"item":  ".Article, #page-content",
+		"title": "#ivs_title, .rich_media_title",
+		// "content": "#ivs_content p, section > strong, section > span > strong, section > p",
+		"content": "#ivs_content p, section[data-autoskip] > p, section[data-tools] section > p, section:not([data-brushtype]) > span, section[data-brushtype] > span > strong",
 	}
 
 	if val, ok := selectors[t]; ok {
@@ -30,7 +39,8 @@ func (p DailyParserShanghai) GetSelector(t string) string {
 
 func (p DailyParserShanghai) GetItemLinks() []string {
 	return []string{
-		"https://mp.weixin.qq.com/s/bqZp2AqqE-FPzJpx6FlhPA", // 5月7日 居住地信息
+		"https://mp.weixin.qq.com/s/jlMoi0uCLQOGxNUH-TAZ0g", // 5月7日 疫情通报
+		// "https://mp.weixin.qq.com/s/bqZp2AqqE-FPzJpx6FlhPA", // 5月7日 居住地信息
 		// "https://mp.weixin.qq.com/s/Sq1YN8oMu0RCSddtFnN3tg", // 5月5日 疫情通报
 		// "https://mp.weixin.qq.com/s/xps19UKtpgZUEPhfj1GC9Q", // 5月4日 疫情通报
 		// "https://mp.weixin.qq.com/s/KyTRqsRBWbM5cEa2sk2wbg", // 5月3日 居住地信息
@@ -38,7 +48,10 @@ func (p DailyParserShanghai) GetItemLinks() []string {
 		// "https://mp.weixin.qq.com/s/s_spcc0OApRItbuq5DG2LA", // 5月2日 居住地信息
 		// "https://mp.weixin.qq.com/s/6Zk1yLrGojy_5bU4oS9ZTA", // 5月2日 疫情通报
 		// "https://mp.weixin.qq.com/s/agdZHOqVZh9atNHOQEFTog", // 5月1日 居住地信息
-		// "https://mp.weixin.qq.com/s/C8CaP7iR8Bi1HizU9NnjDw", // 4月13日 疫情通报
+		"https://mp.weixin.qq.com/s/5T76lht3s6g_KTiIx3XAYw", // 4月14日 居住地信息
+		"https://mp.weixin.qq.com/s/CuoDLOZXhBl5HREQZe_9IQ", // 4月14日 疫情通报
+		"https://mp.weixin.qq.com/s/L9AffT-SoEBV4puBa_mRqg", // 4月13日 居住地信息
+		"https://mp.weixin.qq.com/s/C8CaP7iR8Bi1HizU9NnjDw", // 4月13日 疫情通报
 		"https://mp.weixin.qq.com/s/OZGM-pNkefZqWr0IFRJj1g", // 4月12日 居住地信息
 		"https://mp.weixin.qq.com/s/SQoQiurUqYMz6xOvuBdVWw", // 4月12日 疫情通报
 		"https://mp.weixin.qq.com/s/vxFiV2HeSvByINUlTmFKZA", // 4月11日 居住地信息
