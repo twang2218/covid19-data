@@ -219,7 +219,11 @@ func (c *DailyCrawler) FixDaily(d *model.Daily) error {
 			c += v
 		}
 		if d.LocalAsymptomaticFromBubble != c {
-			log.Warnf("[%s] 无症状(来自隔离管控)数据不匹配：总共:%d (%d) (分区: %v)", d.Date.Format("2006-01-02"), d.LocalAsymptomaticFromBubble, c, d.DistrictAsymptomaticFromBubble)
+			log.Warnf("[%s] 无症状(来自隔离管控)数据不匹配：总共:%d => %d: (分区: %v)",
+				d.Date.Format("2006-01-02"),
+				d.LocalAsymptomaticFromBubble,
+				c,
+				d.DistrictAsymptomaticFromBubble)
 		}
 	}
 	if d.LocalAsymptomaticFromRisk == 0 {
@@ -236,7 +240,11 @@ func (c *DailyCrawler) FixDaily(d *model.Daily) error {
 			r += v
 		}
 		if d.LocalAsymptomaticFromRisk != r {
-			log.Warnf("[%s] 无症状(来自风险人群)数据不匹配：总共:%d (分区: %v)", d.Date.Format("2006-01-02"), d.LocalAsymptomaticFromRisk, d.DistrictAsymptomaticFromRisk)
+			log.Warnf("[%s] 无症状(来自风险人群)数据不匹配：总共:%d => %d: (分区: %v)",
+				d.Date.Format("2006-01-02"),
+				d.LocalAsymptomaticFromRisk,
+				r,
+				d.DistrictAsymptomaticFromRisk)
 		}
 	}
 	if d.DistrictAsymptomatic == nil {
@@ -254,6 +262,22 @@ func (c *DailyCrawler) FixDaily(d *model.Daily) error {
 	}
 
 	//	确诊
+	mcsc := d.Mild + d.Common + d.Severe + d.Critical
+	if d.LocalConfirmed == 0 {
+		if d.Mild != 0 || d.Common != 0 || d.Severe != 0 || d.Critical != 0 {
+			d.LocalConfirmed = mcsc
+		}
+	} else {
+		//	当临床分型数据存在，但是本地确诊数据却不一致的时候报错
+		if (d.Mild != 0 || d.Common != 0 || d.Severe != 0 || d.Critical != 0) &&
+			d.LocalConfirmed != mcsc {
+			log.Warnf("[%s] 本土确诊数据不匹配：本土确诊:%d => %d: (轻型:%d / 普通型:%d / 重型:%d / 危重型:%d)",
+				d.Date.Format("2006-01-02"),
+				d.LocalConfirmed,
+				mcsc,
+				d.Mild, d.Common, d.Severe, d.Critical)
+		}
+	}
 	if d.Confirmed == 0 {
 		if d.LocalConfirmed != 0 || d.ImportedConfirmed != 0 {
 			d.Confirmed = d.LocalConfirmed + d.ImportedConfirmed
@@ -270,7 +294,11 @@ func (c *DailyCrawler) FixDaily(d *model.Daily) error {
 			c += v
 		}
 		if d.LocalConfirmedFromAsymptomatic != c {
-			log.Warnf("[%s] 确证病例(来自无症状)数据不匹配：总共:%d (分区: %v)", d.Date.Format("2006-01-02"), d.LocalConfirmedFromAsymptomatic, d.DistrictConfirmedFromAsymptomatic)
+			log.Warnf("[%s] 确证病例(来自无症状)数据不匹配：总共:%d => %d: (分区: %v)",
+				d.Date.Format("2006-01-02"),
+				d.LocalConfirmedFromAsymptomatic,
+				c,
+				d.DistrictConfirmedFromAsymptomatic)
 		}
 	}
 	if d.LocalConfirmedFromBubble != 0 {
@@ -280,7 +308,11 @@ func (c *DailyCrawler) FixDaily(d *model.Daily) error {
 			c += v
 		}
 		if d.LocalConfirmedFromBubble != c {
-			log.Warnf("[%s] 确证病例(来自隔离管控)数据不匹配：总共:%d (分区: %v)", d.Date.Format("2006-01-02"), d.LocalConfirmedFromBubble, d.DistrictConfirmedFromBubble)
+			log.Warnf("[%s] 确证病例(来自隔离管控)数据不匹配：总共:%d => %d: (分区: %v)",
+				d.Date.Format("2006-01-02"),
+				d.LocalConfirmedFromBubble,
+				c,
+				d.DistrictConfirmedFromBubble)
 		}
 	}
 	if d.LocalConfirmedFromRisk == 0 {
@@ -297,7 +329,11 @@ func (c *DailyCrawler) FixDaily(d *model.Daily) error {
 			r += v
 		}
 		if d.LocalConfirmedFromRisk != r {
-			log.Warnf("[%s] 确证病例(来自风险人群)数据不匹配：总共:%d (分区: %v)", d.Date.Format("2006-01-02"), d.LocalConfirmedFromRisk, d.DistrictConfirmedFromRisk)
+			log.Warnf("[%s] 确证病例(来自风险人群)数据不匹配：总共:%d => %d: (分区: %v)",
+				d.Date.Format("2006-01-02"),
+				d.LocalConfirmedFromRisk,
+				r,
+				d.DistrictConfirmedFromRisk)
 		}
 	}
 	if d.DistrictConfirmed == nil {
@@ -357,7 +393,11 @@ func (c *DailyCrawler) FixDaily(d *model.Daily) error {
 			c += v
 		}
 		if d.LocalPositiveFromBubble != c {
-			log.Warnf("[%s] 阳性感染者(来自隔离管控)数据不匹配：总共:%d (%d) (分区: %v)", d.Date.Format("2006-01-02"), d.LocalPositiveFromBubble, c, d.DistrictPositiveFromBubble)
+			log.Warnf("[%s] 阳性感染者(来自隔离管控)数据不匹配：总共:%d => (%d): (分区: %v)",
+				d.Date.Format("2006-01-02"),
+				d.LocalPositiveFromBubble,
+				c,
+				d.DistrictPositiveFromBubble)
 		}
 	}
 	if d.LocalPositiveFromRisk == 0 {
@@ -374,19 +414,38 @@ func (c *DailyCrawler) FixDaily(d *model.Daily) error {
 			r += v
 		}
 		if d.LocalPositiveFromRisk != r {
-			log.Warnf("[%s] 阳性感染者(来自风险人群)数据不匹配：总共:%d (分区: %v)", d.Date.Format("2006-01-02"), d.LocalPositiveFromRisk, d.DistrictPositiveFromRisk)
+			log.Warnf("[%s] 阳性感染者(来自风险人群)数据不匹配：总共:%d => (%d): (分区: %v)",
+				d.Date.Format("2006-01-02"),
+				d.LocalPositiveFromRisk,
+				r,
+				d.DistrictPositiveFromRisk)
 		}
 	}
-	if d.DistrictPositive == nil {
+	if len(d.DistrictPositive) == 0 {
 		d.DistrictPositive = make(map[string]int)
-		for r, v := range d.DistrictPositiveFromBubble {
-			d.DistrictPositive[r] = v
-		}
-		for r, v := range d.DistrictPositiveFromRisk {
-			if val, ok := d.DistrictPositive[r]; ok {
-				d.DistrictPositive[r] = val + v
-			} else {
+		if len(d.DistrictPositiveFromBubble) > 0 || len(d.DistrictPositiveFromRisk) > 0 {
+			//	如果存在分项的阳性分区数据，就从这里计算整体阳性数据
+			for r, v := range d.DistrictPositiveFromBubble {
 				d.DistrictPositive[r] = v
+			}
+			for r, v := range d.DistrictPositiveFromRisk {
+				if val, ok := d.DistrictPositive[r]; ok {
+					d.DistrictPositive[r] = val + v
+				} else {
+					d.DistrictPositive[r] = v
+				}
+			}
+		} else if len(d.DistrictConfirmed) > 0 || len(d.DistrictAsymptomatic) > 0 {
+			//	如果存在确诊和无症状分区数据，从这里计算阳性数据
+			for r, v := range d.DistrictConfirmed {
+				d.DistrictPositive[r] = v
+			}
+			for r, v := range d.DistrictAsymptomatic {
+				if val, ok := d.DistrictPositive[r]; ok {
+					d.DistrictPositive[r] = val + v
+				} else {
+					d.DistrictPositive[r] = v
+				}
 			}
 		}
 	}
@@ -434,13 +493,13 @@ func (c *DailyCrawler) FixDaily(d *model.Daily) error {
 	}
 
 	// 在院治疗
-	if d.InHospital == 0 {
-		if d.LocalInHospital != 0 || d.ImportedInHospital != 0 {
-			d.InHospital = d.LocalInHospital + d.ImportedInHospital
+	if d.CurrentInHospital == 0 {
+		if d.CurrentLocalInHospital != 0 || d.CurrentImportedInHospital != 0 {
+			d.CurrentInHospital = d.CurrentLocalInHospital + d.CurrentImportedInHospital
 		}
 	} else {
-		if d.InHospital != (d.LocalInHospital + d.ImportedInHospital) {
-			log.Warnf("[%s] 在院治疗数据不匹配：总共:%d (本土:%d / 境外输入:%d)", d.Date.Format("2006-01-02"), d.InHospital, d.LocalInHospital, d.ImportedInHospital)
+		if d.CurrentInHospital != (d.CurrentLocalInHospital + d.CurrentImportedInHospital) {
+			log.Warnf("[%s] 在院治疗数据不匹配：总共:%d (本土:%d / 境外输入:%d)", d.Date.Format("2006-01-02"), d.CurrentInHospital, d.CurrentLocalInHospital, d.CurrentImportedInHospital)
 		}
 	}
 
@@ -457,15 +516,21 @@ func (c *DailyCrawler) FixDaily(d *model.Daily) error {
 	}
 
 	//	本土确诊、出院、死亡、住院
-	if d.LocalInHospital+d.TotalLocalDischargedFromHospital+d.TotalLocalDeath != d.TotalLocalConfirmed {
-		log.Warnf("[%s] 本土确诊、出院、死亡、住院数据不匹配：累计本土确诊(%d) => 本土在院治疗(%d) + 累计本土治愈出院(%d) + 累计本土死亡(%d)", d.Date.Format("2006-01-02"),
-			d.TotalLocalConfirmed, d.LocalInHospital, d.TotalLocalDischargedFromHospital, d.TotalLocalDeath)
+	if d.CurrentLocalInHospital+d.TotalLocalDischargedFromHospital+d.TotalLocalDeath != d.TotalLocalConfirmed {
+		log.Warnf("[%s] 本土确诊、出院、死亡、住院数据不匹配：累计本土确诊(%d) => (%d): 本土在院治疗(%d) + 累计本土治愈出院(%d) + 累计本土死亡(%d)",
+			d.Date.Format("2006-01-02"),
+			d.TotalLocalConfirmed,
+			d.CurrentLocalInHospital+d.TotalLocalDischargedFromHospital+d.TotalLocalDeath,
+			d.CurrentLocalInHospital, d.TotalLocalDischargedFromHospital, d.TotalLocalDeath)
 	}
 
 	//	境外输入确诊、出院、死亡、住院
-	if d.ImportedInHospital+d.TotalImportedDischargedFromHospital != d.TotalImportedConfirmed {
-		log.Warnf("[%s] 境外输入确诊、出院、死亡、住院数据不匹配：累计境外输入确诊(%d) => 境外输入在院治疗(%d) + 累计境外输入治愈出院(%d)", d.Date.Format("2006-01-02"),
-			d.TotalImportedConfirmed, d.ImportedInHospital, d.TotalImportedDischargedFromHospital)
+	if d.CurrentImportedInHospital+d.TotalImportedDischargedFromHospital != d.TotalImportedConfirmed {
+		log.Warnf("[%s] 境外输入确诊、出院、死亡、住院数据不匹配：累计境外输入确诊(%d) => (%d): 境外输入在院治疗(%d) + 累计境外输入治愈出院(%d)",
+			d.Date.Format("2006-01-02"),
+			d.TotalImportedConfirmed,
+			d.CurrentImportedInHospital+d.TotalImportedDischargedFromHospital,
+			d.CurrentImportedInHospital, d.TotalImportedDischargedFromHospital)
 	}
 
 	return nil
@@ -475,29 +540,37 @@ func (c *DailyCrawler) FixDailyByResidents(d *model.Daily, rs model.Residents) e
 	// 可以从居住地信息统计分区数据
 	if len(d.DistrictConfirmed) == 0 || len(d.DistrictAsymptomatic) == 0 {
 		// log.Tracef("FixDailyByResidents(): %#v", *d)
+		if d.DistrictAsymptomatic == nil {
+			d.DistrictAsymptomatic = make(map[string]int)
+			// log.Tracef("FixDailyByResidents() - DistrictAsymptomatic: %#v", *d)
+		}
+		if d.DistrictConfirmed == nil {
+			d.DistrictConfirmed = make(map[string]int)
+			// log.Tracef("FixDailyByResidents() - DistrictConfirmed: %#v", *d)
+		}
+		if d.DistrictPositive == nil {
+			d.DistrictPositive = make(map[string]int)
+			// log.Tracef("FixDailyByResidents() - DistrictPositive: %#v", *d)
+		}
 		for _, r := range rs {
 			if r.Date.Equal(d.Date) && len(r.District) > 0 && len(r.Type) > 0 {
 				if r.Type == "无症状感染者" {
 					//	无症状感染者
 					if val, ok := d.DistrictAsymptomatic[r.District]; ok {
 						d.DistrictAsymptomatic[r.District] = val + 1
+						d.DistrictPositive[r.District] = val + 1
 					} else {
-						if d.DistrictAsymptomatic == nil {
-							d.DistrictAsymptomatic = make(map[string]int)
-							log.Tracef("FixDailyByResidents() - DistrictAsymptomatic: %#v", *d)
-						}
 						d.DistrictAsymptomatic[r.District] = 1
+						d.DistrictPositive[r.District] = 1
 					}
 				} else {
 					//	轻型、普通型、重型、危重型
 					if val, ok := d.DistrictConfirmed[r.District]; ok {
 						d.DistrictConfirmed[r.District] = val + 1
+						d.DistrictPositive[r.District] = val + 1
 					} else {
-						if d.DistrictConfirmed == nil {
-							d.DistrictConfirmed = make(map[string]int)
-							log.Tracef("FixDailyByResidents() - DistrictAsymptomatic: %#v", *d)
-						}
 						d.DistrictConfirmed[r.District] = 1
+						d.DistrictPositive[r.District] = 1
 					}
 				}
 			}

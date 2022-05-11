@@ -9,123 +9,137 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRegexpDailyTitle(t *testing.T) {
-	testcases := [][]string{
+func TestParseDailyTitle(t *testing.T) {
+	type Case struct {
+		Content string
+		Daily   model.Daily
+	}
+	testcases := []Case{
 		{
 			"上海2022年4月21日，新增本土新冠肺炎确诊病例1931例 新增本土无症状感染者15698例 无新增境外输入性新冠肺炎确诊病例 无新增境外输入性无症状感染者",
-			"2022年4月21日", // 日期
-			"1931",       // 本土新增确诊
-			"15698",      // 本土新增无症状
-			"",           // 境外新增确诊
-			"",           // 境外新增无症状
+			model.Daily{
+				Date:              s2date("2022-04-21"),
+				LocalConfirmed:    1931,
+				LocalAsymptomatic: 15698,
+			},
 		},
 		{
 			"4月21日，新增本土新冠肺炎确诊病例1931例 新增本土无症状感染者15698例 无新增境外输入性新冠肺炎确诊病例 无新增境外输入性无症状感染者",
-			"4月21日", // 日期
-			"1931",  // 本土新增确诊
-			"15698", // 本土新增无症状
-			"",      // 境外新增确诊
-			"",      // 境外新增无症状
+			model.Daily{
+				Date:              s2date("2022-04-21"),
+				LocalConfirmed:    1931,
+				LocalAsymptomatic: 15698,
+			},
 		},
 		{
 			"4月24日（0-24时）上海新增2472例本土新冠肺炎确诊病例，新增16983例本土无症状感染者",
-			"4月24日", // 日期
-			"2472",  // 本土新增确诊
-			"16983", // 本土新增无症状
-			"",      // 境外新增确诊
-			"",
+			model.Daily{
+				Date:              s2date("2022-04-24"),
+				LocalConfirmed:    2472,
+				LocalAsymptomatic: 16983,
+			},
 		},
 		{
 			"海2022年4月24日，新增本土新冠肺炎确诊病例2472例 新增本土无症状感染者16983例 无新增境外输入性新冠肺炎确诊病例 新增境外输入性无症状感染者1例",
-			"2022年4月24日", // 日期
-			"2472",       // 本土新增确诊
-			"16983",      // 本土新增无症状
-			"",           // 境外新增确诊
-			"1",
+			model.Daily{
+				Date:                 s2date("2022-04-24"),
+				LocalConfirmed:       2472,
+				LocalAsymptomatic:    16983,
+				ImportedAsymptomatic: 1,
+			},
 		},
 		{
 			"4月18日上海新增新增境外输入性新冠肺炎确诊病例25例 新增境外输入性无症状感染者10例 解除医学观察无症状感染者4例 治愈出院8例",
-			"4月18日", // 日期
-			"",      // 本土新增确诊
-			"",      // 本土新增无症状
-			"25",    // 境外新增确诊
-			"10",    // 境外新增无症状
+			model.Daily{
+				Date:                 s2date("2022-04-18"),
+				ImportedConfirmed:    2472,
+				LocalAsymptomatic:    25,
+				ImportedAsymptomatic: 10,
+			},
 		},
 		{
 			"北京5月1日新增36例本土确诊病例、 5例本土无症状感染者 治愈出院10例\n日期：2022-05-02 来源：北京市卫生健康委员会 ",
-			"5月1日", // 日期
-			"36",   // 本土新增确诊
-			"5",    // 本土新增无症状
-			"",     // 境外新增确诊
-			"",     // 境外新增无症状
+			model.Daily{
+				Date:                 s2date("2022-05-01"),
+				LocalConfirmed:       36,
+				LocalAsymptomatic:    5,
+				ImportedAsymptomatic: 1,
+			},
 		},
 		{
 			"4月5日0时至24时，新增4例本土确诊病例（确诊病例1昨日已通报）和1例无症状感染者，无新增疑似病例；无新增境外输入确诊病例、疑似病例和无症状感染者。治愈出院3例。",
-			"4月5日", // 日期
-			"4",    // 本土新增确诊
-			"1",    // 本土新增无症状
-			"",     // 境外新增确诊
-			"",     // 境外新增无症状
+			model.Daily{
+				Date:              s2date("2022-04-05"),
+				LocalConfirmed:    4,
+				LocalAsymptomatic: 1,
+			},
+		},
+		{
+			"5月7日0时至24时，新增44例本土确诊病例和18例无症状感染者，无新增疑似病例；无新增境外输入确诊病例、无症状感染者和疑似病例。治愈出院10例。",
+			model.Daily{
+				Date:              s2date("2022-05-07"),
+				LocalConfirmed:    44,
+				LocalAsymptomatic: 18,
+			},
+		},
+		{
+			"4月18日上海新增新增境外输入性新冠肺炎确诊病例25例 新增境外输入性无症状感染者10例 解除医学观察无症状感染者4例 治愈出院8例",
+			model.Daily{
+				Date:                 s2date("2022-04-18"),
+				ImportedConfirmed:    25,
+				ImportedAsymptomatic: 10,
+			},
+		},
+		{
+			"4月16日0时至24时，无新增本土确诊病例、疑似病例和无症状感染者；无新增境外输入确诊病例、疑似病例，新增3例境外输入无症状感染者。治愈出院4例。",
+			model.Daily{
+				Date:                 s2date("2022-04-16"),
+				ImportedAsymptomatic: 3,
+			},
+		},
+		{
+			"4月23日0时至24时，新增22例本土确诊病例（确诊病例1至14昨日已通报），无新增疑似病例和无症状感染者；无新增境外输入确诊病例、疑似病例，新增1例境外输入无症状感染者。治愈出院6例。",
+			model.Daily{
+				Date:                 s2date("2022-04-23"),
+				LocalConfirmed:       22,
+				ImportedAsymptomatic: 1,
+			},
+		},
+		{
+			"北京4月17日新增3例本土确诊病例和4例境外输入确诊病例、1例境外输入无症状感染者 治愈出院7例",
+			model.Daily{
+				Date:                 s2date("2022-04-17"),
+				LocalConfirmed:       3,
+				ImportedConfirmed:    4,
+				ImportedAsymptomatic: 1,
+			},
+		},
+		{
+			"北京4月30日新增53例本土确诊病例、6例本土无症状感染者和1例境外输入无症状感染者 治愈出院11例 ",
+			model.Daily{
+				Date:                 s2date("2022-04-30"),
+				LocalConfirmed:       53,
+				LocalAsymptomatic:    6,
+				ImportedAsymptomatic: 1,
+			},
 		},
 	}
 
 	for i, c := range testcases {
-		var m []string
-		//	日期
-		m = reDailyDate.FindStringSubmatch(c[0])
-		if len(c[1]) > 0 {
-			assert.NotNil(t, m, fmt.Sprintf("匹配标题 - 日期失败：(%d) %q => nil", i, c[0]))
-			if len(m) > 0 {
-				assert.Equal(t, c[1], m[1], fmt.Sprintf("匹配标题 - 日期失败：(%d) %q => nil", i, c[0]))
-			}
-		} else {
-			assert.Nil(t, m, fmt.Sprintf("匹配标题 - 日期失败：(%d) %q => nil", i, c[0]))
+		ps := []struct {
+			name   string
+			parser DailyParser
+		}{
+			{"上海", DailyParserShanghai{}},
+			{"北京", DailyParserBeijing{}},
 		}
 
-		// 本土确诊
-		m = reDailyLocalConfirmed.FindStringSubmatch(c[0])
-		if len(c[2]) > 0 {
-			assert.NotNil(t, m, fmt.Sprintf("匹配标题 - 本土确诊失败：(%d) %q => nil", i, c[0]))
-			if len(m) > 0 {
-				assert.Equal(t, c[2], m[1], fmt.Sprintf("匹配标题 - 本土确诊失败：(%d) %q => nil", i, c[0]))
-			}
-		} else {
-			assert.Nil(t, m, fmt.Sprintf("匹配标题 - 本土确诊失败：(%d) %q => nil", i, c[0]))
-		}
-		// 本土无症状
-		m = reDailyLocalAsymptomatic.FindStringSubmatch(c[0])
-		if len(c[3]) > 0 {
-			assert.NotNil(t, m, fmt.Sprintf("匹配标题 - 本土无症状失败：(%d) %q => nil", i, c[0]))
-			if len(m) > 0 {
-				assert.Equal(t, c[3], m[1], fmt.Sprintf("匹配标题 - 本土无症状失败：(%d) %q => nil", i, c[0]))
-			}
-		} else {
-			assert.Nil(t, m, fmt.Sprintf("匹配标题 - 本土无症状失败：(%d) %q => nil", i, c[0]))
-		}
-
-		// 境外输入确诊病例
-		m = reDailyImportedConfirmed.FindStringSubmatch(c[0])
-		if len(c[4]) > 0 {
-			assert.NotNil(t, m, fmt.Sprintf("匹配标题 - 境外输入确诊病例失败：(%d) %q => nil", i, c[0]))
-			if len(m) > 0 {
-				assert.Equal(t, c[4], m[1], fmt.Sprintf("匹配标题 - 境外输入确诊病例失败：(%d) %q => nil", i, c[0]))
-			}
-		} else {
-			assert.Nil(t, m, fmt.Sprintf("匹配标题 - 境外输入确诊病例失败：(%d) %q => %v", i, c[0], m))
-		}
-		// 境外输入无症状
-		m = reDailyImportedAsymptomatic.FindStringSubmatch(c[0])
-		if len(c[5]) > 0 {
-			assert.NotNil(t, m, fmt.Sprintf("匹配标题 - 境外输入无症状失败：(%d) %q => nil", i, c[0]))
-			if len(m) > 0 {
-				assert.Equal(t, c[5], m[1], fmt.Sprintf("匹配标题 - 境外输入无症状失败：(%d) %q => nil", i, c[0]))
-			}
-		} else {
-			if m != nil {
-				// TODO: Fix this case
-				// assert.Contains(t, m[0], "无症状")
-			} else {
-				assert.Nil(t, m, fmt.Sprintf("匹配标题 - 境外输入无症状失败：(%d) %q => %v", i, c[0], m))
+		for _, p := range ps {
+			var d model.Daily
+			err := p.parser.ParseDailyTitle(&d, c.Content)
+			assert.NoErrorf(t, err, "解析标题失败 [%s] - (%d) %q => %s", p.name, i, c.Content, err)
+			if err != nil {
+				assert.EqualValues(t, c.Daily, d, "匹配标题失败 [%s] - (%d) '%s'", p.name, i, c.Content)
 			}
 		}
 	}

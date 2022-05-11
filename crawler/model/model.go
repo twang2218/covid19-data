@@ -12,6 +12,10 @@ import (
 	"time"
 )
 
+type Keyer interface {
+	Key() string
+}
+
 type Daily struct {
 	Date time.Time // 日期
 	//	总共
@@ -23,7 +27,6 @@ type Daily struct {
 	Severe                           int // 重型
 	Critical                         int // 危重型
 	Death                            int // 死亡
-	InHospital                       int // 在院治疗
 	DischargedFromHospital           int // 治愈出院
 	DischargedFromMedicalObservation int // 解除医学观察
 	UnderMedicalObservation          int // 尚在医学观察
@@ -39,7 +42,6 @@ type Daily struct {
 	LocalConfirmedFromRisk                int // 从风险人群中发现的本土病例
 	LocalAsymptomaticFromBubble           int // 从闭环隔离中发现的无症状感染者
 	LocalAsymptomaticFromRisk             int // 从风险人群中发现的无症状感染者
-	LocalInHospital                       int // 本土在院治疗
 	LocalDischargedFromHospital           int // 本土病例出院
 	LocalDischargedFromMedicalObservation int // 本土解除医学观察
 	LocalDeath                            int // 本土死亡病例
@@ -49,11 +51,17 @@ type Daily struct {
 	ImportedPositive                         int // 境外输入阳性感染者
 	ImportedConfirmed                        int // 境外输入病例
 	ImportedAsymptomatic                     int // 境外输入无症状感染者
-	ImportedInHospital                       int // 境外输入在院治疗
 	ImportedDischargedFromHospital           int // 境外输入病例出院
 	ImportedDischargedFromMedicalObservation int // 境外输入解除医学观察
 	ImportedDeath                            int // 境外输入死亡
 	ImportedUnderMedicalObservation          int // 境外输入尚在医学观察
+
+	//	当前
+	CurrentSevere             int // 当前重症病例
+	CurrentCritical           int // 当前危重症病例
+	CurrentInHospital         int // 当前在院治疗
+	CurrentLocalInHospital    int // 当前本土在院治疗
+	CurrentImportedInHospital int // 当前境外输入在院治疗
 
 	//	累计
 	TotalLocalPositive                  int // 累计本土阳性感染者
@@ -83,6 +91,28 @@ func (d Daily) Key() string {
 	return d.Date.Format("2006-01-02")
 }
 
+func (d Daily) String() string {
+	ld := make([]string, 0, len(d.DistrictPositive))
+	for k := range d.DistrictPositive {
+		ld = append(ld, k)
+	}
+	sort.Strings(ld)
+	ds := strings.Join(ld, ",")
+	return fmt.Sprintf("[%s]: 阳性: %d => \t [本土 %d (确诊:%d, 无症状:%d)] / [境外输入 %d (确诊:%d, 无症状:%d)]; \t 死亡: %d; 城区: %d\t[%s]",
+		d.Date.Format("2006-01-02"),
+		d.Positive,
+		d.LocalPositive,
+		d.LocalConfirmed,
+		d.LocalAsymptomatic,
+		d.ImportedPositive,
+		d.ImportedConfirmed,
+		d.ImportedAsymptomatic,
+		d.Death,
+		len(d.DistrictPositive),
+		ds,
+	)
+}
+
 type Dailys []Daily
 
 var lockDailys sync.Mutex
@@ -102,7 +132,6 @@ func (cs Dailys) SaveToCSV(filename string, districts []string) error {
 		"重型",
 		"危重型",
 		"死亡",
-		"在院治疗",
 		"治愈出院",
 		"解除医学观察",
 		"尚在医学观察",
@@ -117,7 +146,6 @@ func (cs Dailys) SaveToCSV(filename string, districts []string) error {
 		"从风险人群中发现的本土病例",
 		"从闭环隔离中发现的无症状感染者",
 		"从风险人群中发现的无症状感染者",
-		"本土在院治疗",
 		"本土病例出院",
 		"本土解除医学观察",
 		"本土死亡病例",
@@ -126,11 +154,16 @@ func (cs Dailys) SaveToCSV(filename string, districts []string) error {
 		"境外输入阳性感染者",
 		"境外输入病例",
 		"境外输入无症状感染者",
-		"境外输入在院治疗",
 		"境外输入病例出院",
 		"境外输入解除医学观察",
 		"境外输入死亡",
 		"境外输入尚在医学观察",
+		//	当前
+		"当前重症病例",
+		"当前危重症病例",
+		"当前在院治疗",
+		"当前本土在院治疗",
+		"当前境外输入在院治疗",
 		//	累计
 		"累计本土阳性感染者",
 		"累计本土确诊",
@@ -198,7 +231,6 @@ func (cs Dailys) SaveToCSV(filename string, districts []string) error {
 			strconv.Itoa(c.Severe),
 			strconv.Itoa(c.Critical),
 			strconv.Itoa(c.Death),
-			strconv.Itoa(c.InHospital),
 			strconv.Itoa(c.DischargedFromHospital),
 			strconv.Itoa(c.DischargedFromMedicalObservation),
 			strconv.Itoa(c.UnderMedicalObservation),
@@ -213,7 +245,6 @@ func (cs Dailys) SaveToCSV(filename string, districts []string) error {
 			strconv.Itoa(c.LocalConfirmedFromRisk),
 			strconv.Itoa(c.LocalAsymptomaticFromBubble),
 			strconv.Itoa(c.LocalAsymptomaticFromRisk),
-			strconv.Itoa(c.LocalInHospital),
 			strconv.Itoa(c.LocalDischargedFromHospital),
 			strconv.Itoa(c.LocalDischargedFromMedicalObservation),
 			strconv.Itoa(c.LocalDeath),
@@ -222,11 +253,16 @@ func (cs Dailys) SaveToCSV(filename string, districts []string) error {
 			strconv.Itoa(c.ImportedPositive),
 			strconv.Itoa(c.ImportedConfirmed),
 			strconv.Itoa(c.ImportedAsymptomatic),
-			strconv.Itoa(c.ImportedInHospital),
 			strconv.Itoa(c.ImportedDischargedFromHospital),
 			strconv.Itoa(c.ImportedDischargedFromMedicalObservation),
 			strconv.Itoa(c.ImportedDeath),
 			strconv.Itoa(c.ImportedUnderMedicalObservation),
+			//	当前
+			strconv.Itoa(c.CurrentSevere),
+			strconv.Itoa(c.CurrentCritical),
+			strconv.Itoa(c.CurrentInHospital),
+			strconv.Itoa(c.CurrentLocalInHospital),
+			strconv.Itoa(c.CurrentImportedInHospital),
 			//	累计
 			strconv.Itoa(c.TotalLocalPositive),
 			strconv.Itoa(c.TotalLocalConfirmed),
@@ -313,6 +349,19 @@ type Resident struct {
 
 func (r Resident) Key() string {
 	return fmt.Sprintf("%s.%s", r.Date.Format("2006-01-02"), r.Name)
+}
+
+func (r Resident) String() string {
+	return fmt.Sprintf("[%s] '%s': %s, %s, %.0f, '%s%s%s'",
+		r.Date.Format("2006-01-02"),
+		r.Name,
+		r.Type,
+		r.Gender,
+		r.Age,
+		r.City,
+		r.District,
+		r.Address,
+	)
 }
 
 type Residents []Resident

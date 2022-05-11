@@ -39,6 +39,16 @@ func (p DailyParserShanghai) GetItemLinks() []string {
 		// "https://mp.weixin.qq.com/s/6Zk1yLrGojy_5bU4oS9ZTA", // 5月2日 疫情通报
 		// "https://mp.weixin.qq.com/s/agdZHOqVZh9atNHOQEFTog", // 5月1日 居住地信息
 		// "https://mp.weixin.qq.com/s/C8CaP7iR8Bi1HizU9NnjDw", // 4月13日 疫情通报
+		"https://mp.weixin.qq.com/s/LguiUZj-zxy4xy19WO0_UA", // 4月17日 居住地信息
+		"https://mp.weixin.qq.com/s/wuZXG2rdCKi-A5sZQJdKfA", // 4月17日 疫情通报
+		"https://mp.weixin.qq.com/s/dRa-PExJr1qkRis88eGCnQ", // 4月16日 居住地信息
+		"https://mp.weixin.qq.com/s/9YaDe0nseAmv58IwTQfakQ", // 4月16日 疫情通报
+		"https://mp.weixin.qq.com/s/ZkhimhWpa92I2EWn3hmd8w", //	4月15日 居住地信息
+		"https://mp.weixin.qq.com/s/SE0_F-Bwc2JFM_qKLwXpyQ", // 4月15日 疫情通报
+		"https://mp.weixin.qq.com/s/5T76lht3s6g_KTiIx3XAYw", // 4月14日 居住地信息
+		"https://mp.weixin.qq.com/s/CuoDLOZXhBl5HREQZe_9IQ", // 4月14日 疫情通报
+		"https://mp.weixin.qq.com/s/L9AffT-SoEBV4puBa_mRqg", // 4月13日 居住地信息
+		"https://mp.weixin.qq.com/s/C8CaP7iR8Bi1HizU9NnjDw", // 4月13日 疫情通报
 		"https://mp.weixin.qq.com/s/OZGM-pNkefZqWr0IFRJj1g", // 4月12日 居住地信息
 		"https://mp.weixin.qq.com/s/SQoQiurUqYMz6xOvuBdVWw", // 4月12日 疫情通报
 		"https://mp.weixin.qq.com/s/vxFiV2HeSvByINUlTmFKZA", // 4月11日 居住地信息
@@ -138,7 +148,9 @@ func (p DailyParserShanghai) ParseDailyTitle(d *model.Daily, title string) error
 	if m == nil {
 		// return fmt.Errorf("[%s] 无法解析文章标题中本土新增：%q", d.Date.Format("2006-01-02"), title)
 	} else {
-		d.LocalConfirmed, err = strconv.Atoi(m[1])
+		///	2种情况
+		n := m[1] + m[2]
+		d.LocalConfirmed, err = strconv.Atoi(n)
 		if err != nil {
 			return fmt.Errorf("[%s] 无法解析文章标题中本土新增：%q", d.Date.Format("2006-01-02"), title)
 		}
@@ -149,7 +161,9 @@ func (p DailyParserShanghai) ParseDailyTitle(d *model.Daily, title string) error
 	if m == nil || !strings.Contains(m[0], "无症状") {
 		// return fmt.Errorf("[%s] 无法解析文章标题中本土无症状感染者：%q", d.Date.Format("2006-01-02"), title)
 	} else {
-		d.LocalAsymptomatic, err = strconv.Atoi(m[1])
+		// 有3种情况
+		n := m[1] + m[2] + m[3]
+		d.LocalAsymptomatic, err = strconv.Atoi(n)
 		if err != nil {
 			return fmt.Errorf("[%s] 无法解析文章标题中本土无症状感染者：%q", d.Date.Format("2006-01-02"), title)
 		}
@@ -160,7 +174,9 @@ func (p DailyParserShanghai) ParseDailyTitle(d *model.Daily, title string) error
 	if m == nil {
 		// log.Warnf("[%s] 无法解析文章标题中境外输入新增：%q", d.Date.Format("2006-01-02"), title)
 	} else {
-		d.ImportedConfirmed, err = strconv.Atoi(m[1])
+		//	数值有两个case
+		n := m[1] + m[2]
+		d.ImportedConfirmed, err = strconv.Atoi(n)
 		if err != nil {
 			log.Warnf("[%s] 无法解析文章标题中境外输入新增：%q", d.Date.Format("2006-01-02"), title)
 		}
@@ -171,7 +187,9 @@ func (p DailyParserShanghai) ParseDailyTitle(d *model.Daily, title string) error
 	if m == nil || !strings.Contains(m[0], "无症状") {
 		// log.Warnf("[%s] 无法解析文章标题中境外输入无症状感染者：%q", d.Date.Format("2006-01-02"), title)
 	} else {
-		d.ImportedAsymptomatic, err = strconv.Atoi(m[1])
+		/// 正则包含3个可能性，因此有3个数值的匹配，但是只可能有一个有值，因此字符串合并后就是那个有值的值
+		n := m[1] + m[2] + m[3] + m[4]
+		d.ImportedAsymptomatic, err = strconv.Atoi(n)
 		if err != nil {
 			log.Warnf("[%s] 无法解析文章标题中境外输入无症状感染者：%q", d.Date.Format("2006-01-02"), title)
 		}
@@ -238,7 +256,9 @@ func (p DailyParserShanghai) ParseDailyContent(d *model.Daily, content string) e
 		if m == nil {
 			// log.Warnf("[%s] 无法解析文章内容中本土新增：%q", d.Date.Format("2006-01-02"), content)
 		} else {
-			d.LocalConfirmed, err = strconv.Atoi(m[1])
+			///	2种情况
+			n := m[1] + m[2]
+			d.LocalConfirmed, err = strconv.Atoi(n)
 			if err != nil {
 				return fmt.Errorf("[%s] 无法解析文章内容中本土新增：%q", d.Date.Format("2006-01-02"), m[1])
 			}
@@ -251,7 +271,9 @@ func (p DailyParserShanghai) ParseDailyContent(d *model.Daily, content string) e
 		if m == nil {
 			// log.Warnf("[%s] 无法解析文章内容中本土无症状：%q", d.Date.Format("2006-01-02"), content)
 		} else {
-			d.LocalAsymptomatic, err = strconv.Atoi(m[1])
+			// 有3种情况
+			n := m[1] + m[2] + m[3]
+			d.LocalAsymptomatic, err = strconv.Atoi(n)
 			if err != nil {
 				return fmt.Errorf("[%s] 无法解析文章内容中本土无症状：%q", d.Date.Format("2006-01-02"), m[1])
 			}
@@ -264,20 +286,9 @@ func (p DailyParserShanghai) ParseDailyContent(d *model.Daily, content string) e
 		if m == nil {
 			// log.Warnf("[%s] 无法解析文章内容中境外输入确诊：%q", d.Date.Format("2006-01-02"), content)
 		} else {
-			d.ImportedConfirmed, err = strconv.Atoi(m[1])
-			if err != nil {
-				return fmt.Errorf("[%s] 无法解析文章内容中境外输入确诊：%q", d.Date.Format("2006-01-02"), m[1])
-			}
-		}
-	}
-
-	// 境外输入确诊 (补充标题缺失)
-	if d.ImportedConfirmed == 0 {
-		m = reDailyImportedConfirmed.FindStringSubmatch(content)
-		if m == nil {
-			// log.Warnf("[%s] 无法解析文章内容中境外输入确诊：%q", d.Date.Format("2006-01-02"), content)
-		} else {
-			d.ImportedConfirmed, err = strconv.Atoi(m[1])
+			//	数值有两个case
+			n := m[1] + m[2]
+			d.ImportedConfirmed, err = strconv.Atoi(n)
 			if err != nil {
 				return fmt.Errorf("[%s] 无法解析文章内容中境外输入确诊：%q", d.Date.Format("2006-01-02"), m[1])
 			}
@@ -436,7 +447,7 @@ func (p DailyParserShanghai) ParseDailyContent(d *model.Daily, content string) e
 	if m == nil {
 		// log.Warnf("[%s] 无法解析文章内容中本土在院治疗：%q", d.Date.Format("2006-01-02"), content)
 	} else {
-		d.LocalInHospital, err = strconv.Atoi(m[1])
+		d.CurrentLocalInHospital, err = strconv.Atoi(m[1])
 		if err != nil {
 			return fmt.Errorf("[%s] 无法解析文章内容中本土在院治疗：%q", d.Date.Format("2006-01-02"), m[1])
 		}
@@ -469,7 +480,7 @@ func (p DailyParserShanghai) ParseDailyContent(d *model.Daily, content string) e
 	if m == nil {
 		// log.Warnf("[%s] 无法解析文章内容中境外输入在院治疗：%q", d.Date.Format("2006-01-02"), content)
 	} else {
-		d.ImportedInHospital, err = strconv.Atoi(m[1])
+		d.CurrentImportedInHospital, err = strconv.Atoi(m[1])
 		if err != nil {
 			return fmt.Errorf("[%s] 无法解析文章内容中境外输入在院治疗：%q", d.Date.Format("2006-01-02"), m[1])
 		}
@@ -486,25 +497,25 @@ func (p DailyParserShanghai) ParseDailyContent(d *model.Daily, content string) e
 		}
 	}
 
-	// 重型
+	// 当前重型
 	m = reDailySevere.FindStringSubmatch(content)
 	if m == nil {
-		// log.Warnf("[%s] 无法解析文章内容中重型：%q", d.Date.Format("2006-01-02"), content)
+		// log.Warnf("[%s] 无法解析文章内容中当前重型：%q", d.Date.Format("2006-01-02"), content)
 	} else {
-		d.Severe, err = strconv.Atoi(m[1])
+		d.CurrentSevere, err = strconv.Atoi(m[1])
 		if err != nil {
-			return fmt.Errorf("[%s] 无法解析文章内容中重型：%q", d.Date.Format("2006-01-02"), m[1])
+			return fmt.Errorf("[%s] 无法解析文章内容中当前重型：%q", d.Date.Format("2006-01-02"), m[1])
 		}
 	}
 
-	// 危重型
+	// 当前危重型
 	m = reDailyCritical.FindStringSubmatch(content)
 	if m == nil {
-		// log.Warnf("[%s] 无法解析文章内容中危重型：%q", d.Date.Format("2006-01-02"), content)
+		// log.Warnf("[%s] 无法解析文章内容中当前危重型：%q", d.Date.Format("2006-01-02"), content)
 	} else {
-		d.Critical, err = strconv.Atoi(m[1])
+		d.CurrentCritical, err = strconv.Atoi(m[1])
 		if err != nil {
-			return fmt.Errorf("[%s] 无法解析文章内容中危重型：%q", d.Date.Format("2006-01-02"), m[1])
+			return fmt.Errorf("[%s] 无法解析文章内容中当前危重型：%q", d.Date.Format("2006-01-02"), m[1])
 		}
 	}
 
