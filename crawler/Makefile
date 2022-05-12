@@ -62,3 +62,18 @@ clean: clean-web-cache clean-figure clean-data
 	go clean
 	rm -f ./daily-crawler
 
+remote:
+	server create jupyter x4
+
+sync-to-remote:
+	rsync -rlptzv \
+		--progress \
+		--exclude-from=../.rsyncignore \
+		../ jupyter:covid/
+
+sync-from-remote:
+	rsync -rlptzv \
+		--progress \
+		--exclude-from=../.rsyncignore \
+		jupyter:covid/ ../
+
