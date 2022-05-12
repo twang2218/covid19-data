@@ -60,7 +60,7 @@ var spewConfig = spew.ConfigState{
 	MaxDepth:                10,
 }
 
-func diff[T Keyer](old, fresh T) string {
+func diff[T model.Keyer](old, fresh T) string {
 	o := spewConfig.Sdump(old)
 	f := spewConfig.Sdump(fresh)
 	diff, err := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
@@ -78,11 +78,12 @@ func diff[T Keyer](old, fresh T) string {
 	return diff
 }
 
-type Keyer interface {
-	Key() string
+type KeyerStringer interface {
+	model.Keyer
+	fmt.Stringer
 }
 
-func update[T Keyer](old, fresh []T, show_addition bool) []T {
+func update[T KeyerStringer](old, fresh []T, show_addition bool) []T {
 	//	对旧表建立索引
 	old_index := make(map[string]T, len(old))
 	for _, od := range old {
@@ -106,7 +107,7 @@ func update[T Keyer](old, fresh []T, show_addition bool) []T {
 		if !found {
 			old = append(old, fd)
 			if show_addition {
-				log.Infof("添加新的数据：[%s] => %+v", fd.Key(), fd)
+				log.Infof("添加新的数据：[%s] => %s", fd.Key(), fd)
 			}
 		}
 	}
@@ -201,29 +202,30 @@ func actionCrawlDaily(c *cli.Context) error {
 	ds.Sort()
 
 	for _, d := range ds {
-		log.Tracef("actionCrawlDaily(): [%s] 本土 (确诊:%d {无症状=>确诊:%d, 隔离管控:%d, 其它:%d},\t 无症状: %d (隔离管控:%d, 其它:%d));\t 境外输入 (确诊:%d, 无症状: %d);\t 出院: %d（本土:%d / 境外输入:%d）;\t 解除医学观察: %d （本土:%d / 境外输入:%d）;\t 死亡: %d (本土:%d, 境外输入:%d); \t %d 居住地信息",
-			d.Date.Format("2006-01-02"),
-			d.LocalConfirmed,
-			d.LocalConfirmedFromAsymptomatic,
-			d.LocalConfirmedFromBubble,
-			d.LocalConfirmedFromRisk,
-			d.LocalAsymptomatic,
-			d.LocalAsymptomaticFromBubble,
-			d.LocalAsymptomaticFromRisk,
-			d.ImportedConfirmed,
-			d.ImportedAsymptomatic,
-			d.DischargedFromHospital,
-			d.LocalDischargedFromHospital,
-			d.ImportedDischargedFromHospital,
-			d.DischargedFromMedicalObservation,
-			d.LocalDischargedFromMedicalObservation,
-			d.ImportedDischargedFromMedicalObservation,
-			d.Death,
-			d.LocalDeath,
-			d.ImportedDeath,
-			stats[d.Date],
-			// d.LocalConfirmed+d.LocalAsymptomatic-stats[d.Date],
-		)
+		// log.Tracef("actionCrawlDaily(): [%s] 本土 (确诊:%d {无症状=>确诊:%d, 隔离管控:%d, 其它:%d},\t 无症状: %d (隔离管控:%d, 其它:%d));\t 境外输入 (确诊:%d, 无症状: %d);\t 出院: %d（本土:%d / 境外输入:%d）;\t 解除医学观察: %d （本土:%d / 境外输入:%d）;\t 死亡: %d (本土:%d, 境外输入:%d); \t %d 居住地信息",
+		// 	d.Date.Format("2006-01-02"),
+		// 	d.LocalConfirmed,
+		// 	d.LocalConfirmedFromAsymptomatic,
+		// 	d.LocalConfirmedFromBubble,
+		// 	d.LocalConfirmedFromRisk,
+		// 	d.LocalAsymptomatic,
+		// 	d.LocalAsymptomaticFromBubble,
+		// 	d.LocalAsymptomaticFromRisk,
+		// 	d.ImportedConfirmed,
+		// 	d.ImportedAsymptomatic,
+		// 	d.DischargedFromHospital,
+		// 	d.LocalDischargedFromHospital,
+		// 	d.ImportedDischargedFromHospital,
+		// 	d.DischargedFromMedicalObservation,
+		// 	d.LocalDischargedFromMedicalObservation,
+		// 	d.ImportedDischargedFromMedicalObservation,
+		// 	d.Death,
+		// 	d.LocalDeath,
+		// 	d.ImportedDeath,
+		// 	stats[d.Date],
+		// 	// d.LocalConfirmed+d.LocalAsymptomatic-stats[d.Date],
+		// )
+		log.Tracef("actionCrawlDaily(): %s; \t %d 居住地信息", d, stats[d.Date])
 		// log.Tracef("actionCrawlDaily(): [%s] \t => 无症状：%d, \t 区域无症状： {%v}",
 		// 	d.Date.Format("2006-01-02"),
 		// 	d.LocalAsymptomatic,

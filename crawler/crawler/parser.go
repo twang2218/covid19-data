@@ -23,21 +23,26 @@ type DailyParser interface {
 }
 
 var (
-	reDailyDate                 = regexp.MustCompile(`(?:^|[：】海京]+)(?P<date>(?:\d+年)?\d+月\d+日)(?:[，（]+|0—24时|0时至24时|新增|[^，\n]+新增)`)
-	reDailyLocalConfirmed       = regexp.MustCompile(`(?:[^累计\n]+本土[新冠肺炎]*确诊病例|新增)(?P<number>\d+)(?:例|例本土[新冠肺炎]*确诊[病例]*)(?:[和、，。（ ]|$)`)
-	reDailyLocalAsymptomatic    = regexp.MustCompile(`(?:新增|[\s，、和])(?:[本土]*无症状感染者)?(?P<number>\d+)(?:例|例[本土]*无症状感染者)(?:[、，。（ 和]|$)`)
-	reDailyImportedConfirmed    = regexp.MustCompile(`境外输入(?:性新冠肺炎确诊)?(?:病例)?(?P<number>\d+)例`)
-	reDailyImportedAsymptomatic = regexp.MustCompile(`(?:[新增]*境外输入性?无症状感染者|和)(?P<number>\d+)例(?:境外输入无症状感染者)?`)
+	reDailyDate                 = regexp.MustCompile(`(?:^|[：】海京]+)(?P<date>(?:\d+年)?\d+月\d+日?)(?:[，（]+|0—24时|0时至24时|新增|[^，\n]+新增|[\s\n]+)`)
+	reDailyLocalPositive        = regexp.MustCompile(`(?:新增[^\n境外]*本土[新冠肺炎]*[病毒]*感染者(?P<number1>\d+)例|新增(?P<number2>\d+)例本土[新冠肺炎]*[病毒]*感染者)`)
+	reDailyMild                 = regexp.MustCompile(`[；、]轻型(?P<number>\d+)例[；、]`)
+	reDailyCommon               = regexp.MustCompile(`[；、]普通型(?P<number>\d+)例[；、]`)
+	reDailyLocalConfirmed       = regexp.MustCompile(`(?:新增[^\n境外]*本土[新冠肺炎]*确诊[病例]*(?P<number1>\d+)例|新增(?P<number2>\d+)例本土[新冠肺炎]*确诊[病例]*)`)
+	reDailyLocalAsymptomatic    = regexp.MustCompile(`(?:新增(?P<number1>\d+)例[本土]*[新冠肺炎]*无症状感染者|新增[^\n境外累计]*本土[^\n境外累计]*[新冠肺炎]*无症状感染者(?P<number2>\d+)例|新增[^\n境外累计]*本土[^\n境外累计]*[和、 ](?P<number3>\d+)例[本土]*[新冠肺炎]*无症状感染者)`)
+	reDailyImportedConfirmed    = regexp.MustCompile(`(?:新增[^\n累计]*(?P<number1>\d+)例境外输入性?[新冠肺炎]*确诊[病例]*|新增[^\n累计]*境外输入性?[新冠肺炎]*确诊[病例]*(?P<number2>\d+)例)`)
+	reDailyImportedAsymptomatic = regexp.MustCompile(`(?:新增[^\n]*境外输入性?[新冠肺炎]*无症状感染者(?P<number1>\d+)例|新增(?P<number2>\d+)例境外输入性?[新冠肺炎]*无症状感染者|新增[^\n]*境外输入[^\n]+[和、，](?P<number3>\d+)例[新冠肺炎]*无症状感染者|[和、，](?P<number4>\d+)例境外输入[新冠肺炎]*无症状感染者)`)
 )
 
 var (
-	reDailyDischargedFromHospital           = regexp.MustCompile(`治愈出院(?P<number>\d+)例`)
+	reDailyDischargedFromHospital           = regexp.MustCompile(`^[^\n累计时]+治愈出院(?P<number>\d+)例`)
 	reDailyDischargedFromMedicalObservation = regexp.MustCompile(`解除医学观察(?:无症状感染者)?(?P<number>\d+)例`)
 )
 
 var (
 	reDailyUnderMedicalObservation                  = regexp.MustCompile(`24时[^。]+尚在医学观察中的[无症状]+感染者(?P<number>\d+)例`)
 	reDailyDischargedFromMedicalObservation2        = regexp.MustCompile(`—24时.*解除医学观察无症状感染者(?P<number>\d+)例`)
+	reDailyLocalPositiveFromBubble                  = regexp.MustCompile(`[；、，。]管控人员(?P<number>\d+)例[；、，。]`)
+	reDailyLocalPositiveFromRisk                    = regexp.MustCompile(`[；、，。]社区筛查(?P<number>\d+)例[；、，。]`)
 	reDailyLocalConfirmedFromBubble                 = regexp.MustCompile(`—24时.*，(?:其中)?(?P<number>\d+)例确诊病例和.*在隔离管控中发现`)
 	reDailyLocalConfirmedFromAsymptomatic           = regexp.MustCompile(`—24时.*本土.*(?:含|其中)(?P<number>\d+)例(?:确诊病例)?(?:由|为既往)无症状感染者(?:转为确诊病例|转归)`)
 	reDailyLocalAsymptomaticFromBubble              = regexp.MustCompile(`—24时.*和(?P<number>\d+)例无症状感染者在隔离管控中发现`)
@@ -46,7 +51,6 @@ var (
 	reDailyLocalInHospital                          = regexp.MustCompile(`24时[^。]+累计[^。]*本土[^。]*在院治疗(?P<number>\d+)例`)
 	reDailyLocalUnderMedicalObservation             = regexp.MustCompile(`24时[^。]+尚在医学观察中[^。]+本土无症状感染者(?P<number>\d+)[例，]`)
 	reDailyLocalDeath                               = regexp.MustCompile(`—24时.*本土.*死亡(?:病例)?(?P<number>\d+)例`)
-	reDailyImportedAsymptomatic2                    = regexp.MustCompile(`—24时.*境外输入性无症状感染者(?P<number>\d+)例`)
 	reDailyImportedDischargedFromHospital           = regexp.MustCompile(`—24\s*时.*境外输入.*治愈出院(?P<number>\d+)例`)
 	reDailyImportedDischargedFromMedicalObservation = regexp.MustCompile(`—24时.*解除医学观察.*境外输入性无症状感染者(?P<number>\d+)例`)
 	reDailyImportedInHospital                       = regexp.MustCompile(`24时[^。]+累计[^。]*境外输入[^。]*在院治疗(?P<number>\d+)例`)
@@ -62,7 +66,7 @@ var (
 )
 
 var (
-	patternCase                            = `(?:病例|无症状感染者)(?P<from>\d+)(?:[—、,]?(?:病例|无症状感染者)?(?P<to>\d+))?(?:，[^区\n]+)*(?:，(?:居住(?:于|地为))?(?P<district>[^区\n]+区)[^，]*)，`
+	patternCase                            = `(?:病例|无症状感染者)(?P<from>\d+)(?:[—、,]?(?:病例|无症状感染者)?(?P<to>\d+))?(?:，[^区\n]+)*(?:[，\xa0\s"]+(?:居住(?:于|地为))?(?P<district>[^区\n]{2,5}区)[^，]*)，`
 	patternCaseList                        = `(?:` + patternCase + `\n?)+`
 	reDailyRegionConfirmedFromBubble       = regexp.MustCompile(patternCaseList + `.*(?:隔离管控人员|无症状感染者的密切接触者).*确诊病例`)
 	reDailyRegionConfirmedFromRisk         = regexp.MustCompile(patternCaseList + `.*风险人群筛查.*确诊病例`)

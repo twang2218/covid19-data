@@ -92,7 +92,7 @@ func (p DailyParserBeijing) ParseDailyTitle(d *model.Daily, title string) error 
 	// 标题日期
 	m = reDailyDate.FindStringSubmatch(title)
 	if m == nil {
-		return fmt.Errorf("[%s] 无法解析文章标题中日期：%q", d.Date.Format("2006-01-02"), title)
+		// return fmt.Errorf("[%s] 无法解析文章标题中日期：%q", d.Date.Format("2006-01-02"), title)
 	} else {
 		s := m[1]
 		if !strings.Contains(s, "年") {
@@ -104,18 +104,20 @@ func (p DailyParserBeijing) ParseDailyTitle(d *model.Daily, title string) error 
 		}
 	}
 
-	if strings.Contains(title, "居住地信息") {
-		// 这里面只包含居住地信息，后面不需要解析
-		// log.Infof("[%s] 居住地信息：%q", cs.Date.Format("2006-01-02"), title)
-		return nil
-	}
+	// if p.IsResidents(d.Date, title) {
+	// 	// 这里面只包含居住地信息，后面不需要解析
+	// 	// log.Infof("[%s] 居住地信息：%q", cs.Date.Format("2006-01-02"), title)
+	// 	return nil
+	// }
 
 	// 本土新增
 	m = reDailyLocalConfirmed.FindStringSubmatch(title)
 	if m == nil {
 		// return fmt.Errorf("[%s] 无法解析文章标题中本土新增：%q", d.Date.Format("2006-01-02"), title)
 	} else {
-		d.LocalConfirmed, err = strconv.Atoi(m[1])
+		///	2种情况
+		n := m[1] + m[2]
+		d.LocalConfirmed, err = strconv.Atoi(n)
 		if err != nil {
 			return fmt.Errorf("[%s] 无法解析文章标题中本土新增：%q", d.Date.Format("2006-01-02"), title)
 		}
@@ -126,7 +128,9 @@ func (p DailyParserBeijing) ParseDailyTitle(d *model.Daily, title string) error 
 	if m == nil || !strings.Contains(m[0], "无症状") {
 		// return fmt.Errorf("[%s] 无法解析文章标题中本土无症状感染者：%q", d.Date.Format("2006-01-02"), title)
 	} else {
-		d.LocalAsymptomatic, err = strconv.Atoi(m[1])
+		// 有3种情况
+		n := m[1] + m[2] + m[3]
+		d.LocalAsymptomatic, err = strconv.Atoi(n)
 		if err != nil {
 			return fmt.Errorf("[%s] 无法解析文章标题中本土无症状感染者：%q", d.Date.Format("2006-01-02"), title)
 		}
@@ -137,7 +141,9 @@ func (p DailyParserBeijing) ParseDailyTitle(d *model.Daily, title string) error 
 	if m == nil {
 		// log.Warnf("[%s] 无法解析文章标题中境外输入新增：%q", d.Date.Format("2006-01-02"), title)
 	} else {
-		d.ImportedConfirmed, err = strconv.Atoi(m[1])
+		//	数值有两个case
+		n := m[1] + m[2]
+		d.ImportedConfirmed, err = strconv.Atoi(n)
 		if err != nil {
 			log.Warnf("[%s] 无法解析文章标题中境外输入新增：%q", d.Date.Format("2006-01-02"), title)
 		}
@@ -148,7 +154,9 @@ func (p DailyParserBeijing) ParseDailyTitle(d *model.Daily, title string) error 
 	if m == nil || !strings.Contains(m[0], "无症状") {
 		// log.Warnf("[%s] 无法解析文章标题中境外输入无症状感染者：%q", d.Date.Format("2006-01-02"), title)
 	} else {
-		d.ImportedAsymptomatic, err = strconv.Atoi(m[1])
+		/// 正则包含4个可能性
+		n := m[1] + m[2] + m[3] + m[4]
+		d.ImportedAsymptomatic, err = strconv.Atoi(n)
 		if err != nil {
 			log.Warnf("[%s] 无法解析文章标题中境外输入无症状感染者：%q", d.Date.Format("2006-01-02"), title)
 		}
@@ -200,7 +208,11 @@ func (p DailyParserBeijing) ParseDailyContent(d *model.Daily, content string) er
 		if m == nil {
 			// log.Warnf("[%s] 无法解析文章内容中日期：%q", d.Date.Format("2006-01-02"), content)
 		} else {
-			d.Date, err = time.Parse("2006年1月2日", m[1])
+			s := m[1]
+			if !strings.Contains(s, "年") {
+				s = "2022年" + s
+			}
+			d.Date, err = time.Parse("2006年1月2日", s)
 			if err != nil {
 				return fmt.Errorf("[%s] 无法解析文章内容中日期：%q", d.Date.Format("2006-01-02"), m[1])
 			}
@@ -209,13 +221,53 @@ func (p DailyParserBeijing) ParseDailyContent(d *model.Daily, content string) er
 
 	// log.Tracef("[%s] 解析文章内容：(%d)", d.Date.Format("2006-01-02"), len(content))
 
+	// 本土阳性感染者 (补充标题缺失)
+	if d.LocalPositive == 0 {
+		m = reDailyLocalPositive.FindStringSubmatch(content)
+		if m == nil {
+			//	可能没有阳性数据
+			// fmt.Printf("[%s] 无法解析文章内容中本土阳性感染者：%q", d.Date.Format("2006-01-02"), content)
+		} else {
+			d.LocalPositive, err = strconv.Atoi(m[1])
+			if err != nil {
+				return fmt.Errorf("[%s] 无法解析文章内容中本土阳性感染者：%q", d.Date.Format("2006-01-02"), m[1])
+			}
+		}
+	}
+
+	if d.LocalPositive > 0 && d.Mild == 0 {
+		m = reDailyMild.FindStringSubmatch(content)
+		if m == nil {
+			fmt.Printf("[%s] 无法解析文章内容中本土轻型：%q", d.Date.Format("2006-01-02"), content)
+		} else {
+			d.Mild, err = strconv.Atoi(m[1])
+			if err != nil {
+				return fmt.Errorf("[%s] 无法解析文章内容中本土轻型：%q", d.Date.Format("2006-01-02"), m[1])
+			}
+		}
+	}
+
+	if d.LocalPositive > 0 && d.Common == 0 {
+		m = reDailyCommon.FindStringSubmatch(content)
+		if m == nil {
+			fmt.Printf("[%s] 无法解析文章内容中本土普通型：%q", d.Date.Format("2006-01-02"), content)
+		} else {
+			d.Common, err = strconv.Atoi(m[1])
+			if err != nil {
+				return fmt.Errorf("[%s] 无法解析文章内容中本土普通型：%q", d.Date.Format("2006-01-02"), m[1])
+			}
+		}
+	}
+
 	// 本土新增 (补充标题缺失)
 	if d.LocalConfirmed == 0 {
 		m = reDailyLocalConfirmed.FindStringSubmatch(content)
 		if m == nil {
 			// log.Warnf("[%s] 无法解析文章内容中本土新增：%q", d.Date.Format("2006-01-02"), content)
 		} else {
-			d.LocalConfirmed, err = strconv.Atoi(m[1])
+			///	2种情况
+			n := m[1] + m[2]
+			d.LocalConfirmed, err = strconv.Atoi(n)
 			if err != nil {
 				return fmt.Errorf("[%s] 无法解析文章内容中本土新增：%q", d.Date.Format("2006-01-02"), m[1])
 			}
@@ -228,7 +280,9 @@ func (p DailyParserBeijing) ParseDailyContent(d *model.Daily, content string) er
 		if m == nil {
 			// log.Warnf("[%s] 无法解析文章内容中本土无症状：%q", d.Date.Format("2006-01-02"), content)
 		} else {
-			d.LocalAsymptomatic, err = strconv.Atoi(m[1])
+			// 有3种情况
+			n := m[1] + m[2] + m[3]
+			d.LocalAsymptomatic, err = strconv.Atoi(n)
 			if err != nil {
 				return fmt.Errorf("[%s] 无法解析文章内容中本土无症状：%q", d.Date.Format("2006-01-02"), m[1])
 			}
@@ -241,20 +295,9 @@ func (p DailyParserBeijing) ParseDailyContent(d *model.Daily, content string) er
 		if m == nil {
 			// log.Warnf("[%s] 无法解析文章内容中境外输入确诊：%q", d.Date.Format("2006-01-02"), content)
 		} else {
-			d.ImportedConfirmed, err = strconv.Atoi(m[1])
-			if err != nil {
-				return fmt.Errorf("[%s] 无法解析文章内容中境外输入确诊：%q", d.Date.Format("2006-01-02"), m[1])
-			}
-		}
-	}
-
-	// 境外输入确诊 (补充标题缺失)
-	if d.ImportedConfirmed == 0 {
-		m = reDailyImportedConfirmed.FindStringSubmatch(content)
-		if m == nil {
-			// log.Warnf("[%s] 无法解析文章内容中境外输入确诊：%q", d.Date.Format("2006-01-02"), content)
-		} else {
-			d.ImportedConfirmed, err = strconv.Atoi(m[1])
+			//	数值有两个case
+			n := m[1] + m[2]
+			d.ImportedConfirmed, err = strconv.Atoi(n)
 			if err != nil {
 				return fmt.Errorf("[%s] 无法解析文章内容中境外输入确诊：%q", d.Date.Format("2006-01-02"), m[1])
 			}
@@ -263,7 +306,7 @@ func (p DailyParserBeijing) ParseDailyContent(d *model.Daily, content string) er
 
 	// 境外输入无症状 (补充标题缺失)
 	if d.ImportedAsymptomatic == 0 {
-		m = reDailyImportedAsymptomatic2.FindStringSubmatch(content)
+		m = reDailyImportedAsymptomatic.FindStringSubmatch(content)
 		if m == nil {
 			// log.Warnf("[%s] 无法解析文章内容中境外输入无症状：%q", d.Date.Format("2006-01-02"), content)
 		} else {
@@ -271,6 +314,28 @@ func (p DailyParserBeijing) ParseDailyContent(d *model.Daily, content string) er
 			if err != nil {
 				return fmt.Errorf("[%s] 无法解析文章内容中境外输入无症状：%q", d.Date.Format("2006-01-02"), m[1])
 			}
+		}
+	}
+
+	// 本土隔离管控中发现的阳性感染者
+	m = reDailyLocalPositiveFromBubble.FindStringSubmatch(content)
+	if m == nil {
+		// log.Warnf("[%s] 无法解析文章内容中本土隔离管控中发现的阳性感染者：%q", d.Date.Format("2006-01-02"), content)
+	} else {
+		d.LocalPositiveFromBubble, err = strconv.Atoi(m[1])
+		if err != nil {
+			return fmt.Errorf("[%s] 无法解析文章内容中本土隔离管控中发现的阳性感染者：%q", d.Date.Format("2006-01-02"), m[1])
+		}
+	}
+
+	// 本土风险人群中发现的阳性感染者
+	m = reDailyLocalPositiveFromRisk.FindStringSubmatch(content)
+	if m == nil {
+		// log.Warnf("[%s] 无法解析文章内容中本土风险人群中发现的阳性感染者：%q", d.Date.Format("2006-01-02"), content)
+	} else {
+		d.LocalPositiveFromRisk, err = strconv.Atoi(m[1])
+		if err != nil {
+			return fmt.Errorf("[%s] 无法解析文章内容中本土风险人群中发现的阳性感染者：%q", d.Date.Format("2006-01-02"), m[1])
 		}
 	}
 
@@ -304,6 +369,19 @@ func (p DailyParserBeijing) ParseDailyContent(d *model.Daily, content string) er
 		d.LocalAsymptomaticFromBubble, err = strconv.Atoi(m[1])
 		if err != nil {
 			return fmt.Errorf("[%s] 无法解析文章内容中本土隔离管控中发现的无症状病例：%q", d.Date.Format("2006-01-02"), m[1])
+		}
+	}
+
+	// 治愈出院 （补充标题缺失）
+	if d.DischargedFromHospital == 0 {
+		m = reDailyDischargedFromHospital.FindStringSubmatch(content)
+		if m == nil {
+			// log.Warnf("[%s] 无法解析文章标题中治愈出院：%q", d.Date.Format("2006-01-02"), content)
+		} else {
+			d.DischargedFromHospital, err = strconv.Atoi(m[1])
+			if err != nil {
+				log.Warnf("[%s] 无法解析文章内容中治愈出院：%q", d.Date.Format("2006-01-02"), content)
+			}
 		}
 	}
 
@@ -413,7 +491,7 @@ func (p DailyParserBeijing) ParseDailyContent(d *model.Daily, content string) er
 	if m == nil {
 		// log.Warnf("[%s] 无法解析文章内容中本土在院治疗：%q", d.Date.Format("2006-01-02"), content)
 	} else {
-		d.LocalInHospital, err = strconv.Atoi(m[1])
+		d.CurrentLocalInHospital, err = strconv.Atoi(m[1])
 		if err != nil {
 			return fmt.Errorf("[%s] 无法解析文章内容中本土在院治疗：%q", d.Date.Format("2006-01-02"), m[1])
 		}
@@ -446,7 +524,7 @@ func (p DailyParserBeijing) ParseDailyContent(d *model.Daily, content string) er
 	if m == nil {
 		// log.Warnf("[%s] 无法解析文章内容中境外输入在院治疗：%q", d.Date.Format("2006-01-02"), content)
 	} else {
-		d.ImportedInHospital, err = strconv.Atoi(m[1])
+		d.CurrentImportedInHospital, err = strconv.Atoi(m[1])
 		if err != nil {
 			return fmt.Errorf("[%s] 无法解析文章内容中境外输入在院治疗：%q", d.Date.Format("2006-01-02"), m[1])
 		}
@@ -468,7 +546,7 @@ func (p DailyParserBeijing) ParseDailyContent(d *model.Daily, content string) er
 	if m == nil {
 		// log.Warnf("[%s] 无法解析文章内容中重型：%q", d.Date.Format("2006-01-02"), content)
 	} else {
-		d.Severe, err = strconv.Atoi(m[1])
+		d.CurrentSevere, err = strconv.Atoi(m[1])
 		if err != nil {
 			return fmt.Errorf("[%s] 无法解析文章内容中重型：%q", d.Date.Format("2006-01-02"), m[1])
 		}
@@ -479,7 +557,7 @@ func (p DailyParserBeijing) ParseDailyContent(d *model.Daily, content string) er
 	if m == nil {
 		// log.Warnf("[%s] 无法解析文章内容中危重型：%q", d.Date.Format("2006-01-02"), content)
 	} else {
-		d.Critical, err = strconv.Atoi(m[1])
+		d.CurrentCritical, err = strconv.Atoi(m[1])
 		if err != nil {
 			return fmt.Errorf("[%s] 无法解析文章内容中危重型：%q", d.Date.Format("2006-01-02"), m[1])
 		}
@@ -522,16 +600,11 @@ func (p DailyParserBeijing) ParseDailyContent(d *model.Daily, content string) er
 	return p.parseDailyContentRegion(d, content)
 }
 
-// var (
-// 	patternCase                            = `(?:病例|无症状感染者)(?P<from>\d+)(?:[—、,]?(?:病例|无症状感染者)?(?P<to>\d+))?(?:，[^区\n]+)*(?:，(?:居住(?:于|地为))?(?P<district>[^区\n]+区)[^，]*)，`
-// 	patternCaseList                        = `(?:` + patternCase + `\n?)+`
-// 	reDailyRegionConfirmedFromBubble       = regexp.MustCompile(patternCaseList + `.*(?:隔离管控人员|无症状感染者的密切接触者).*确诊病例`)
-// 	reDailyRegionConfirmedFromRisk         = regexp.MustCompile(patternCaseList + `.*风险人群筛查.*确诊病例`)
-// 	reDailyRegionConfirmedFromAsymptomatic = regexp.MustCompile(patternCaseList + `.*本土无症状感染者[^密\n]+确诊病例`)
-// 	reDailyRegionAsymptomaticFromBubble    = regexp.MustCompile(patternCaseList + `.*(?:隔离管控人员|无症状感染者的密切接触者).*诊断为无症状感染者`)
-// 	reDailyRegionAsymptomaticFromRisk      = regexp.MustCompile(patternCaseList + `.*风险人群筛查.*诊断为无症状感染者`)
-// 	reDailyRegionItem                      = regexp.MustCompile(patternCase)
-// )
+var (
+	patternCaseBeijing       = `(?P<district>[^，；。、]{2,3}区(?:[和、].{2,3}区)*)各?(?P<number>\d+)例(?:[，；。、])`
+	reDailyRegionListBeijing = regexp.MustCompile(`^[^累计]+(?:` + patternCaseBeijing + `)+`)
+	reDailyRegionItemBeijing = regexp.MustCompile(patternCaseBeijing)
+)
 
 func (p DailyParserBeijing) parseDailyContentRegion(d *model.Daily, content string) error {
 	var mm [][]string
@@ -541,7 +614,7 @@ func (p DailyParserBeijing) parseDailyContentRegion(d *model.Daily, content stri
 	mm = reDailyRegionConfirmedFromBubble.FindAllStringSubmatch(content, -1)
 	if mm == nil {
 		if d.LocalConfirmedFromBubble > 0 {
-			log.Warnf("[%s] 无法解析文章内容中城区确诊病例(来自隔离管控)：%q", d.Date.Format("2006-01-02"), content)
+			log.Warnf("[%s] 无法解析文章内容中城区确诊病例(来自隔离管控)", d.Date.Format("2006-01-02"))
 		}
 	} else {
 		d.DistrictConfirmedFromBubble = p.parseDailyContentRegionItems(d, mm)
@@ -550,9 +623,9 @@ func (p DailyParserBeijing) parseDailyContentRegion(d *model.Daily, content stri
 	//	风险人群 => 确诊病例
 	mm = reDailyRegionConfirmedFromRisk.FindAllStringSubmatch(content, -1)
 	if mm == nil {
-		if d.LocalConfirmedFromRisk > 0 {
-			log.Warnf("[%s] 无法解析文章内容中城区确诊病例(来自风险人群)", d.Date.Format("2006-01-02"))
-		}
+		// if d.LocalConfirmedFromRisk > 0 {
+		// 	log.Warnf("[%s] 无法解析文章内容中城区确诊病例(来自风险人群)", d.Date.Format("2006-01-02"))
+		// }
 	} else {
 		d.DistrictConfirmedFromRisk = p.parseDailyContentRegionItems(d, mm)
 		// log.Warnf("[%s] 城区确诊病例(来自风险人群): %#v", cs.Date.Format("2006-01-02"), cs.DistrictConfirmedFromRisk)
@@ -560,9 +633,9 @@ func (p DailyParserBeijing) parseDailyContentRegion(d *model.Daily, content stri
 	//	无症状 => 确诊病例
 	mm = reDailyRegionConfirmedFromAsymptomatic.FindAllStringSubmatch(content, -1)
 	if mm == nil {
-		if d.LocalConfirmedFromAsymptomatic > 0 {
-			log.Warnf("[%s] 无法解析文章内容中城区确诊病例(来自无症状感染者)", d.Date.Format("2006-01-02"))
-		}
+		// if d.LocalConfirmedFromAsymptomatic > 0 {
+		// 	log.Warnf("[%s] 无法解析文章内容中城区确诊病例(来自无症状感染者)", d.Date.Format("2006-01-02"))
+		// }
 	} else {
 		d.DistrictConfirmedFromAsymptomatic = p.parseDailyContentRegionItems(d, mm)
 		// log.Warnf("[%s] 城区确诊病例(来自无症状感染者): %#v", cs.Date.Format("2006-01-02"), cs.DistrictConfirmedFromAsymptomatic)
@@ -570,9 +643,9 @@ func (p DailyParserBeijing) parseDailyContentRegion(d *model.Daily, content stri
 	//	隔离管控 => 无症状
 	mm = reDailyRegionAsymptomaticFromBubble.FindAllStringSubmatch(content, -1)
 	if mm == nil {
-		if d.LocalAsymptomaticFromBubble > 0 {
-			log.Warnf("[%s] 无法解析文章内容中城区无症状感染者(来自隔离管控)", d.Date.Format("2006-01-02"))
-		}
+		// if d.LocalAsymptomaticFromBubble > 0 {
+		// 	log.Warnf("[%s] 无法解析文章内容中城区无症状感染者(来自隔离管控)", d.Date.Format("2006-01-02"))
+		// }
 	} else {
 		d.DistrictAsymptomaticFromBubble = p.parseDailyContentRegionItems(d, mm)
 		// log.Warnf("[%s] 城区无症状感染者(来自隔离管控): %#v", cs.Date.Format("2006-01-02"), cs.DistrictAsymptomaticFromBubble)
@@ -580,12 +653,22 @@ func (p DailyParserBeijing) parseDailyContentRegion(d *model.Daily, content stri
 	//	风险人群 => 无症状
 	mm = reDailyRegionAsymptomaticFromRisk.FindAllStringSubmatch(content, -1)
 	if mm == nil {
-		if d.LocalAsymptomaticFromRisk > 0 {
-			log.Warnf("[%s] 无法解析文章内容中城区无症状感染者(来自风险人群)", d.Date.Format("2006-01-02"))
-		}
+		// if d.LocalAsymptomaticFromRisk > 0 {
+		// 	log.Warnf("[%s] 无法解析文章内容中城区无症状感染者(来自风险人群)", d.Date.Format("2006-01-02"))
+		// }
 	} else {
 		d.DistrictAsymptomaticFromRisk = p.parseDailyContentRegionItems(d, mm)
 		// log.Warnf("[%s] 城区无症状感染者(来自风险人群): %#v", cs.Date.Format("2006-01-02"), cs.DistrictAsymptomaticFromRisk)
+	}
+	//	区域阳性感染者
+	mm = reDailyRegionListBeijing.FindAllStringSubmatch(content, -1)
+	if mm == nil {
+		// if d.LocalPositive > 0 {
+		// 	log.Warnf("[%s] 无法解析文章内容中城区阳性感染者(来自风险人群)", d.Date.Format("2006-01-02"))
+		// }
+	} else {
+		d.DistrictPositive = p.parseDailyContentRegionItems(d, mm)
+		// log.Warnf("[%s] 城区阳性感染者(来自风险人群): %#v", cs.Date.Format("2006-01-02"), cs.DistrictPositive)
 	}
 
 	return err
@@ -608,60 +691,27 @@ func (p DailyParserBeijing) parseDailyContentRegionItems(d *model.Daily, mm [][]
 
 func (p DailyParserBeijing) parseDailyContentRegionItem(d *model.Daily, text string) map[string]int {
 	item := make(map[string]int)
-	m := reDailyRegionItem.FindAllStringSubmatch(text, -1)
+	m := reDailyRegionItemBeijing.FindAllStringSubmatch(text, -1)
 	if m == nil {
 		log.Warnf("[%s] 无法解析区域病例列表：%q", d.Date.Format("2006-01-02"), text)
 	} else {
 		for _, it := range m {
-			var from int
-			var to int
+			var v int
 			var err error
 
-			if len(it) < 3 {
-				log.Warnf("[%s] 无法解析区域病例列表：%q", d.Date.Format("2006-01-02"), it)
-				continue
-			} else if len(it) == 3 {
-				from_str := strings.TrimSpace(it[1])
-				_, err := strconv.Atoi(from_str)
+			if len(it[2]) > 0 {
+				v, err = strconv.Atoi(it[2])
 				if err != nil {
 					log.Warnf("[%s] 无法解析区域病例列表：%q", d.Date.Format("2006-01-02"), it)
+					continue
 				}
-				region := strings.TrimSpace(it[2])
-				item[region] = 1
-			} else if len(it) == 4 {
-				from_str := strings.TrimSpace(it[1])
-				if len(from_str) > 0 {
-					from, err = strconv.Atoi(from_str)
-					if err != nil {
-						log.Warnf("[%s] 无法解析区域病例列表：%s => %q", d.Date.Format("2006-01-02"), err, it)
-					}
+			}
+			regions := strings.Split(it[1], "和")
+			for _, r := range regions {
+				r = strings.TrimSpace(r)
+				if len(r) > 0 {
+					item[r] = v
 				}
-
-				to_str := strings.TrimSpace(it[2])
-				if len(to_str) > 0 {
-					to, err = strconv.Atoi(to_str)
-					if err != nil {
-						log.Warnf("[%s] 无法解析区域病例列表：%s => %q", d.Date.Format("2006-01-02"), err, it)
-					}
-				}
-
-				region := strings.TrimSpace(it[3])
-				if to == 0 {
-					if val, ok := item[region]; ok {
-						item[region] = val + 1
-					} else {
-						item[region] = 1
-					}
-				} else {
-					if val, ok := item[region]; ok {
-						item[region] = val + (to - from + 1)
-					} else {
-						item[region] = to - from + 1
-					}
-				}
-			} else {
-				log.Warnf("[%s] 无法解析区域病例列表：%q", d.Date.Format("2006-01-02"), it)
-				continue
 			}
 		}
 	}
@@ -670,7 +720,7 @@ func (p DailyParserBeijing) parseDailyContentRegionItem(d *model.Daily, text str
 
 var (
 	reResidentDistrictBeijingSection = regexp.MustCompile(`(?:确诊病例|[无症状]*感染者)(?P<num_list>[\d\s、至]*)：[^\n]+`)
-	reResidentDistrictBeijing1       = regexp.MustCompile(`(?:确诊病例|[无症状]*感染者)(?P<num_list>[\d\s、至]*)[：]?[^\n]*[现住址均位于进入地点为]+(?P<district>[^区\n]+区)(?P<address>[^，。 \n]*)[^\n]*(?:(?P<date>\d+\s*月\d+\s*日|当日)均?诊断均?为(?P<type>确诊病例|无症状感染者))(?:[，]临床分型[均分别]*为(?P<level>(?:[^型，\n]+型)+))?`)
+	reResidentDistrictBeijing1       = regexp.MustCompile(`(?:确诊病例|[无症状]*感染者)(?P<num_list>[\d\s、至]*)[：]?[^\n]*(?:现住址?|进入[地点]*|均为)均?[位于为]*(?P<district>[^区\n]{2,4}区)(?P<address>[^，。 \n]*)[^\n]*(?:(?P<date>\d+\s*月\d+\s*日|当日)均?诊断均?为(?P<type>确诊病例|无症状感染者))(?:[，]临床分型[均分别]*为(?P<level>(?:[^型，\n]+型)+))?`)
 	reResidentDistrictBeijing1Level  = regexp.MustCompile(`(?P<date>\d+月\d+日)?(?:确诊病例|[无症状]*感染者)(?P<num_list>[\d\s、至]+)(?:诊断为确诊病例，)?临床分型均?为(?P<level>[^型]+型)`)
 )
 
