@@ -24,7 +24,7 @@ meta = {
         "name": "上海市",
         "name_pinyin": "shanghai",
         "file_daily": os.path.join(data_dir, "shanghai-daily.csv"),
-        "file_residents": os.path.join(data_dir, "shanghai-daily-residents.csv"),
+        "file_residents": os.path.join(data_dir, "shanghai-residents.csv"),
         "date_range": {"from": "2022-03-06", "to": "2022-06-01"},
         "districts": [
             "浦东新区", "徐汇区", "闵行区", "黄浦区", "嘉定区", "松江区", "虹口区", "长宁区",
@@ -39,13 +39,15 @@ meta = {
             {"from": "2022-04-09", "title": "全市抗原检测"},
             {"from": "2022-04-22", "title": "全员核酸检测"},
             {"from": "2022-04-26", "title": "全员核酸检测"},
+            {"from": "2022-04-29", "title": "第1次社会面清零"},
+            {"from": "2022-05-10", "title": "第2次社会面清零"},
         ]
     },
     "beijing": {
         "name": "北京市",
         "name_pinyin": "beijing",
         "file_daily": os.path.join(data_dir, "beijing-daily.csv"),
-        "file_residents": os.path.join(data_dir, "beijing-daily-residents.csv"),
+        "file_residents": os.path.join(data_dir, "beijing-residents.csv"),
         "date_range": {"from": "2022-04-15", "to": "2022-06-01"},
         "districts": [
             "朝阳区", "东城区", "西城区", "海淀区", "房山区", "丰台区", "石景山区", "门头沟区",
@@ -70,7 +72,7 @@ def draw_city(meta_city, df_daily):
     pathlib.Path(base_dir).mkdir(parents=True, exist_ok=True)
 
     # 画全局图
-    if max(df_daily['从风险人群中发现的本土病例']) > 0 and max(df_daily['重型']) > 0 and max(df_daily['本土确诊病例']) > 0:
+    if max(df_daily['从风险人群中发现的本土病例']) > 0 and max(df_daily['当前重症病例']) > 0 and max(df_daily['本土确诊病例']) > 0:
         fig, axes = plt.subplots(2, 2, figsize = (40,25), sharex=True)
 
         plt.suptitle('{}疫情每日新增数据变化'.format(meta_city['name']), y=0.90, fontsize=30, fontweight='bold', va='center')
@@ -78,8 +80,8 @@ def draw_city(meta_city, df_daily):
         draw_positive('{}全市'.format(meta_city['name']), df_daily['日期'], df_daily['本土确诊病例'], df_daily['本土无症状感染者'], events=meta_city['events'], show_legend=True, show_minor_label=True, ax=axes[0,0])
         draw_positive('{}社会面'.format(meta_city['name']), df_daily['日期'], df_daily['从风险人群中发现的本土病例'], df_daily['从风险人群中发现的无症状感染者'], show_minor_label=True, ax=axes[1,0])
 
-        draw_hospital('住院病例分析', df_daily['日期'], df_daily['本土确诊病例']+df_daily['本土无症状感染者'], df_daily['本土在院治疗'], df_daily['本土病例出院'], df_daily['解除医学观察'], ax=axes[0,1])
-        draw_critical('疫情重症分析', df_daily['日期'], df_daily['重型'], df_daily['危重型'], df_daily['本土死亡病例'], ax=axes[1,1])
+        draw_hospital('住院病例分析', df_daily['日期'], df_daily['本土确诊病例']+df_daily['本土无症状感染者'], df_daily['当前本土在院治疗'], df_daily['本土病例出院'], df_daily['解除医学观察'], ax=axes[0,1])
+        draw_critical('疫情重症分析', df_daily['日期'], df_daily['当前重症病例'], df_daily['当前危重症病例'], df_daily['本土死亡病例'], ax=axes[1,1])
 
         plt.subplots_adjust(wspace=0.03, hspace=0.03)
 
