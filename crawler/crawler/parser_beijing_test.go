@@ -193,14 +193,14 @@ func TestParseDailyContentBeijing(t *testing.T) {
 		{
 			Content: "5月9日0时至24时，新增61例本土确诊病例(含1例5月7日、2例5月8日诊断的无症状感染者转确诊病例)和13例无症状感染者，无新增疑似病例；新增1例境外输入确诊病例，无新增疑似病例和无症状感染者。治愈出院26例。",
 			Daily: model.Daily{
-				Date:                   s2date("2022-05-09"),
-				LocalPositive:          0,
-				Mild:                   0,
-				Common:                 0,
-				LocalConfirmed:         61,
-				LocalAsymptomatic:      13,
-				ImportedConfirmed:      1,
-				DischargedFromHospital: 26,
+				Date:              s2date("2022-05-09"),
+				LocalPositive:     0,
+				Mild:              0,
+				Common:            0,
+				LocalConfirmed:    61,
+				LocalAsymptomatic: 13,
+				ImportedConfirmed: 1,
+				// DischargedFromHospital: 26, // 可以从标题中获得
 			},
 		},
 	}

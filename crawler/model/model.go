@@ -98,7 +98,7 @@ func (d Daily) String() string {
 	}
 	sort.Strings(ld)
 	ds := strings.Join(ld, ",")
-	return fmt.Sprintf("[%s]: 阳性: %d => \t [本土 %d (确诊:%d, 无症状:%d)] / [境外输入 %d (确诊:%d, 无症状:%d)]; \t 死亡: %d; 城区: %d\t[%s]",
+	return fmt.Sprintf("[%s]: 阳性: %d => \t [本土 %d (确诊:%d, 无症状:%d)] / [境外输入 %d (确诊:%d, 无症状:%d)]; 死亡: %d; \t 城区: %d\t[%s]",
 		d.Date.Format("2006-01-02"),
 		d.Positive,
 		d.LocalPositive,

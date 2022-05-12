@@ -30,7 +30,8 @@ func (p DailyParserShanghai) GetSelector(t string) string {
 
 func (p DailyParserShanghai) GetItemLinks() []string {
 	return []string{
-		"https://mp.weixin.qq.com/s/bqZp2AqqE-FPzJpx6FlhPA", // 5月7日 居住地信息
+		"https://mp.weixin.qq.com/s/i4BwsY-a9zXjkJe-FTea4Q", // 5月11日 居住地信息
+		// "https://mp.weixin.qq.com/s/bqZp2AqqE-FPzJpx6FlhPA", // 5月7日 居住地信息
 		// "https://mp.weixin.qq.com/s/Sq1YN8oMu0RCSddtFnN3tg", // 5月5日 疫情通报
 		// "https://mp.weixin.qq.com/s/xps19UKtpgZUEPhfj1GC9Q", // 5月4日 疫情通报
 		// "https://mp.weixin.qq.com/s/KyTRqsRBWbM5cEa2sk2wbg", // 5月3日 居住地信息
@@ -39,24 +40,26 @@ func (p DailyParserShanghai) GetItemLinks() []string {
 		// "https://mp.weixin.qq.com/s/6Zk1yLrGojy_5bU4oS9ZTA", // 5月2日 疫情通报
 		// "https://mp.weixin.qq.com/s/agdZHOqVZh9atNHOQEFTog", // 5月1日 居住地信息
 		// "https://mp.weixin.qq.com/s/C8CaP7iR8Bi1HizU9NnjDw", // 4月13日 疫情通报
-		"https://mp.weixin.qq.com/s/LguiUZj-zxy4xy19WO0_UA", // 4月17日 居住地信息
-		"https://mp.weixin.qq.com/s/wuZXG2rdCKi-A5sZQJdKfA", // 4月17日 疫情通报
-		"https://mp.weixin.qq.com/s/dRa-PExJr1qkRis88eGCnQ", // 4月16日 居住地信息
-		"https://mp.weixin.qq.com/s/9YaDe0nseAmv58IwTQfakQ", // 4月16日 疫情通报
-		"https://mp.weixin.qq.com/s/ZkhimhWpa92I2EWn3hmd8w", //	4月15日 居住地信息
-		"https://mp.weixin.qq.com/s/SE0_F-Bwc2JFM_qKLwXpyQ", // 4月15日 疫情通报
-		"https://mp.weixin.qq.com/s/5T76lht3s6g_KTiIx3XAYw", // 4月14日 居住地信息
-		"https://mp.weixin.qq.com/s/CuoDLOZXhBl5HREQZe_9IQ", // 4月14日 疫情通报
-		"https://mp.weixin.qq.com/s/L9AffT-SoEBV4puBa_mRqg", // 4月13日 居住地信息
-		"https://mp.weixin.qq.com/s/C8CaP7iR8Bi1HizU9NnjDw", // 4月13日 疫情通报
-		"https://mp.weixin.qq.com/s/OZGM-pNkefZqWr0IFRJj1g", // 4月12日 居住地信息
-		"https://mp.weixin.qq.com/s/SQoQiurUqYMz6xOvuBdVWw", // 4月12日 疫情通报
-		"https://mp.weixin.qq.com/s/vxFiV2HeSvByINUlTmFKZA", // 4月11日 居住地信息
-		"https://mp.weixin.qq.com/s/eun72mybh5Uy0k2m88ae_Q", // 4月11日 疫情通报
-		"https://mp.weixin.qq.com/s/u0XfHF8dgfEp8vGjRtcwXA", // 4月10日 居住地信息
-		"https://mp.weixin.qq.com/s/FVqVXKK8EBnUe9sG1Gxq8g", // 4月10日 疫情通报
-		"https://mp.weixin.qq.com/s/_Je5_5_HqBcs5chvH5SFfA", // 4月9日 居住地信息
-		"https://mp.weixin.qq.com/s/s_Ylm-oTP-frivKUR6Wo_A", // 4月9日 疫情通报
+		"https://mp.weixin.qq.com/s/GWI6LxYLHOvv1dioN5olxg", // 4月18日 居住地信息
+		"https://mp.weixin.qq.com/s/lSysAcZ6cJTJRfgu9M9hjQ", // 4月18日 疫情数据
+		// "https://mp.weixin.qq.com/s/LguiUZj-zxy4xy19WO0_UA", // 4月17日 居住地信息
+		// "https://mp.weixin.qq.com/s/wuZXG2rdCKi-A5sZQJdKfA", // 4月17日 疫情通报
+		// "https://mp.weixin.qq.com/s/dRa-PExJr1qkRis88eGCnQ", // 4月16日 居住地信息
+		// "https://mp.weixin.qq.com/s/9YaDe0nseAmv58IwTQfakQ", // 4月16日 疫情通报
+		// "https://mp.weixin.qq.com/s/ZkhimhWpa92I2EWn3hmd8w", //	4月15日 居住地信息
+		// "https://mp.weixin.qq.com/s/SE0_F-Bwc2JFM_qKLwXpyQ", // 4月15日 疫情通报
+		// "https://mp.weixin.qq.com/s/5T76lht3s6g_KTiIx3XAYw", // 4月14日 居住地信息
+		// "https://mp.weixin.qq.com/s/CuoDLOZXhBl5HREQZe_9IQ", // 4月14日 疫情通报
+		// "https://mp.weixin.qq.com/s/L9AffT-SoEBV4puBa_mRqg", // 4月13日 居住地信息
+		// "https://mp.weixin.qq.com/s/C8CaP7iR8Bi1HizU9NnjDw", // 4月13日 疫情通报
+		// "https://mp.weixin.qq.com/s/OZGM-pNkefZqWr0IFRJj1g", // 4月12日 居住地信息
+		// "https://mp.weixin.qq.com/s/SQoQiurUqYMz6xOvuBdVWw", // 4月12日 疫情通报
+		// "https://mp.weixin.qq.com/s/vxFiV2HeSvByINUlTmFKZA", // 4月11日 居住地信息
+		// "https://mp.weixin.qq.com/s/eun72mybh5Uy0k2m88ae_Q", // 4月11日 疫情通报
+		// "https://mp.weixin.qq.com/s/u0XfHF8dgfEp8vGjRtcwXA", // 4月10日 居住地信息
+		// "https://mp.weixin.qq.com/s/FVqVXKK8EBnUe9sG1Gxq8g", // 4月10日 疫情通报
+		// "https://mp.weixin.qq.com/s/_Je5_5_HqBcs5chvH5SFfA", // 4月9日 居住地信息
+		// "https://mp.weixin.qq.com/s/s_Ylm-oTP-frivKUR6Wo_A", // 4月9日 疫情通报
 	}
 }
 
@@ -65,7 +68,7 @@ func (p DailyParserShanghai) GetIndexLinks() []string {
 		LINK_DAILY_0 string = "https://wsjkw.sh.gov.cn/xwfb/index.html"
 		LINK_DAILY_1 string = "https://wsjkw.sh.gov.cn/xwfb/index{page}.html"
 		LINK_DAILY_2 string = "https://ss.shanghai.gov.cn/search?q=%E6%96%B0%E5%A2%9E%E6%9C%AC%E5%9C%9F%20%E5%B1%85%E4%BD%8F%E5%9C%B0%E4%BF%A1%E6%81%AF&page={page}&view=xwzx&contentScope=1&dateOrder=2&tr=4&dr=&format=1&re=2&all=1&siteId=wsjkw.sh.gov.cn&siteArea=all"
-		MAX_PAGES    int    = 25
+		MAX_PAGES    int    = 40
 	)
 
 	links := []string{}
@@ -297,7 +300,7 @@ func (p DailyParserShanghai) ParseDailyContent(d *model.Daily, content string) e
 
 	// 境外输入无症状 (补充标题缺失)
 	if d.ImportedAsymptomatic == 0 {
-		m = reDailyImportedAsymptomatic2.FindStringSubmatch(content)
+		m = reDailyImportedAsymptomatic.FindStringSubmatch(content)
 		if m == nil {
 			// log.Warnf("[%s] 无法解析文章内容中境外输入无症状：%q", d.Date.Format("2006-01-02"), content)
 		} else {
@@ -338,6 +341,19 @@ func (p DailyParserShanghai) ParseDailyContent(d *model.Daily, content string) e
 		d.LocalAsymptomaticFromBubble, err = strconv.Atoi(m[1])
 		if err != nil {
 			return fmt.Errorf("[%s] 无法解析文章内容中本土隔离管控中发现的无症状病例：%q", d.Date.Format("2006-01-02"), m[1])
+		}
+	}
+
+	// 治愈出院 （补充标题缺失）
+	if d.DischargedFromHospital == 0 {
+		m = reDailyDischargedFromHospital.FindStringSubmatch(content)
+		if m == nil {
+			// log.Warnf("[%s] 无法解析文章标题中治愈出院：%q", d.Date.Format("2006-01-02"), content)
+		} else {
+			d.DischargedFromHospital, err = strconv.Atoi(m[1])
+			if err != nil {
+				log.Warnf("[%s] 无法解析文章内容中治愈出院：%q", d.Date.Format("2006-01-02"), content)
+			}
 		}
 	}
 
@@ -564,7 +580,7 @@ func (p DailyParserShanghai) parseDailyContentRegion(d *model.Daily, content str
 	mm = reDailyRegionConfirmedFromBubble.FindAllStringSubmatch(content, -1)
 	if mm == nil {
 		if d.LocalConfirmedFromBubble > 0 {
-			log.Warnf("[%s] 无法解析文章内容中城区确诊病例(来自隔离管控)：%q", d.Date.Format("2006-01-02"), content)
+			log.Warnf("[%s] 无法解析文章内容中城区确诊病例(来自隔离管控)", d.Date.Format("2006-01-02"))
 		}
 	} else {
 		d.DistrictConfirmedFromBubble = p.parseDailyContentRegionItems(d, mm)
@@ -573,9 +589,9 @@ func (p DailyParserShanghai) parseDailyContentRegion(d *model.Daily, content str
 	//	风险人群 => 确诊病例
 	mm = reDailyRegionConfirmedFromRisk.FindAllStringSubmatch(content, -1)
 	if mm == nil {
-		if d.LocalConfirmedFromRisk > 0 {
-			log.Warnf("[%s] 无法解析文章内容中城区确诊病例(来自风险人群)", d.Date.Format("2006-01-02"))
-		}
+		// if d.LocalConfirmedFromRisk > 0 {
+		// 	log.Warnf("[%s] 无法解析文章内容中城区确诊病例(来自风险人群)", d.Date.Format("2006-01-02"))
+		// }
 	} else {
 		d.DistrictConfirmedFromRisk = p.parseDailyContentRegionItems(d, mm)
 		// log.Warnf("[%s] 城区确诊病例(来自风险人群): %#v", cs.Date.Format("2006-01-02"), cs.DistrictConfirmedFromRisk)
@@ -583,9 +599,9 @@ func (p DailyParserShanghai) parseDailyContentRegion(d *model.Daily, content str
 	//	无症状 => 确诊病例
 	mm = reDailyRegionConfirmedFromAsymptomatic.FindAllStringSubmatch(content, -1)
 	if mm == nil {
-		if d.LocalConfirmedFromAsymptomatic > 0 {
-			log.Warnf("[%s] 无法解析文章内容中城区确诊病例(来自无症状感染者)", d.Date.Format("2006-01-02"))
-		}
+		// if d.LocalConfirmedFromAsymptomatic > 0 {
+		// 	log.Warnf("[%s] 无法解析文章内容中城区确诊病例(来自无症状感染者)", d.Date.Format("2006-01-02"))
+		// }
 	} else {
 		d.DistrictConfirmedFromAsymptomatic = p.parseDailyContentRegionItems(d, mm)
 		// log.Warnf("[%s] 城区确诊病例(来自无症状感染者): %#v", cs.Date.Format("2006-01-02"), cs.DistrictConfirmedFromAsymptomatic)
@@ -593,9 +609,9 @@ func (p DailyParserShanghai) parseDailyContentRegion(d *model.Daily, content str
 	//	隔离管控 => 无症状
 	mm = reDailyRegionAsymptomaticFromBubble.FindAllStringSubmatch(content, -1)
 	if mm == nil {
-		if d.LocalAsymptomaticFromBubble > 0 {
-			log.Warnf("[%s] 无法解析文章内容中城区无症状感染者(来自隔离管控)", d.Date.Format("2006-01-02"))
-		}
+		// if d.LocalAsymptomaticFromBubble > 0 {
+		// 	log.Warnf("[%s] 无法解析文章内容中城区无症状感染者(来自隔离管控)", d.Date.Format("2006-01-02"))
+		// }
 	} else {
 		d.DistrictAsymptomaticFromBubble = p.parseDailyContentRegionItems(d, mm)
 		// log.Warnf("[%s] 城区无症状感染者(来自隔离管控): %#v", cs.Date.Format("2006-01-02"), cs.DistrictAsymptomaticFromBubble)
@@ -603,9 +619,9 @@ func (p DailyParserShanghai) parseDailyContentRegion(d *model.Daily, content str
 	//	风险人群 => 无症状
 	mm = reDailyRegionAsymptomaticFromRisk.FindAllStringSubmatch(content, -1)
 	if mm == nil {
-		if d.LocalAsymptomaticFromRisk > 0 {
-			log.Warnf("[%s] 无法解析文章内容中城区无症状感染者(来自风险人群)", d.Date.Format("2006-01-02"))
-		}
+		// if d.LocalAsymptomaticFromRisk > 0 {
+		// 	log.Warnf("[%s] 无法解析文章内容中城区无症状感染者(来自风险人群)", d.Date.Format("2006-01-02"))
+		// }
 	} else {
 		d.DistrictAsymptomaticFromRisk = p.parseDailyContentRegionItems(d, mm)
 		// log.Warnf("[%s] 城区无症状感染者(来自风险人群): %#v", cs.Date.Format("2006-01-02"), cs.DistrictAsymptomaticFromRisk)
